@@ -1,0 +1,369 @@
+Analysis results for test_all.py:
+
+Framework-Specific Smells:
+- Datatype Checker
+  Framework: Pandas
+  How to fix: Set data types explicitly when importing data.
+  Benefits: Ensures correct data format and reduces memory usage.
+  Location: Line 13
+
+- Column Selection Checker
+  Framework: Pandas
+  How to fix: Select necessary columns after importing DataFrame.
+  Benefits: Clarifies data usage and improves performance.
+
+- Randomness Control Checker
+  Framework: NumPy
+  How to fix: Use np.seed() for reproducibility.
+  Benefits: Enables reproducible results and debugging.
+
+- Scaler Missing Checker
+  Framework: ScikitLearn
+  How to fix: Apply scaling before scaling-sensitive operations.
+  Benefits: Improves model performance and accuracy.
+
+- Pipeline Checker
+  Framework: ScikitLearn
+  How to fix: Use Pipelines for all scikit-learn estimators.
+  Benefits: Prevents data leakage and ensures correct model evaluation.
+
+- Randomness Control Checker
+  Framework: ScikitLearn
+  How to fix: Remove random_state=None in estimators.
+  Benefits: Ensures reproducible results and consistent model behaviour.
+
+- Verbose Mode Checker
+  Framework: ScikitLearn
+  How to fix: Use verbose mode for long training processes.
+  Benefits: Provides better insights into model training progress and potential issues.
+
+- Dependent Threshold Checker
+  Framework: ScikitLearn
+  How to fix: Use threshold-independent metrics alongside threshold-dependent metrics.
+  Benefits: Provides a comprehensive evaluation of model performance.
+
+- Unit Testing Checker
+  Framework: ScikitLearn
+  How to fix: Write unit tests for data processing and model components.
+  Benefits: Ensures code reliability and prevents bugs.
+
+- Exception Handling Checker
+  Framework: ScikitLearn
+  How to fix: Handle exceptions in data processing and model training steps.
+  Benefits: Prevents crashes and provides informative error messages.
+
+- Randomness Control Checker
+  Framework: TensorFlow
+  How to fix: Use tf.random.set_seed() for reproducibility.
+  Benefits: Ensures reproducible training results.
+
+- Early Stopping Checker
+  Framework: TensorFlow
+  How to fix: Implement early stopping to prevent overfitting.
+  Benefits: Reduces overfitting and training time, improves generalisation.
+
+- Checkpointing Checker
+  Framework: TensorFlow
+  How to fix: Save model checkpoints during training.
+  Benefits: Prevents data loss and allows training to resume from a specific point.
+
+- Memory Release Checker
+  Framework: TensorFlow
+  How to fix: Clear memory if a neural network is created in a loop.
+  Benefits: Prevents memory leaks and improves performance.
+
+- Mask Missing Checker
+  Framework: TensorFlow
+  How to fix: Ensure valid arguments for log functions.
+  Benefits: Prevents numerical errors and improves model stability.
+
+- Tensor Array Checker
+  Framework: TensorFlow
+  How to fix: Use tf.TensorArray() for growing arrays in loops.
+  Benefits: Enhances performance and reduces memory usage.
+
+- Dependent Threshold Checker
+  Framework: TensorFlow
+  How to fix: Use threshold-independent metrics alongside threshold-dependent metrics.
+  Benefits: Provides a comprehensive evaluation of model performance.
+
+- Logging Checker
+  Framework: TensorFlow
+  How to fix: Use logging for tracking experiments and results.
+  Benefits: Facilitates debugging and experiment tracking, improves reproducibility.
+
+- Batch Normalisation Checker
+  Framework: TensorFlow
+  How to fix: Use batch normalisation layers to improve training stability.
+  Benefits: Stabilises and accelerates training, improves model performance.
+
+- Dropout Usage Checker
+  Framework: TensorFlow
+  How to fix: Apply dropout layers to reduce overfitting.
+  Benefits: Reduces overfitting and improves model generalisation.
+
+- Data Augmentation Checker
+  Framework: TensorFlow
+  How to fix: Apply data augmentation techniques to enhance model robustness.
+  Benefits: Improves model generalisation and robustness.
+
+- Learning Rate Scheduler Checker
+  Framework: TensorFlow
+  How to fix: Implement learning rate schedulers for dynamic learning rate adjustment.
+  Benefits: Optimises training process and improves model performance.
+
+- Model Evaluation Checker
+  Framework: TensorFlow
+  How to fix: Evaluate model performance on validation/test data regularly.
+  Benefits: Ensures model is generalising well to unseen data.
+
+- Unit Testing Checker
+  Framework: TensorFlow
+  How to fix: Develop unit tests for TensorFlow components and workflows.
+  Benefits: Enhances code robustness and reliability.
+
+- Exception Handling Checker
+  Framework: TensorFlow
+  How to fix: Implement proper exception handling for model training and inference.
+  Benefits: Improves code robustness and error management.
+
+- Randomness Control Checker
+  Framework: PyTorch
+  How to fix: Use torch.manual_seed() for reproducibility.
+  Benefits: Enables consistent and reproducible results.
+
+- Deterministic Algorithm Usage Checker
+  Framework: PyTorch
+  How to fix: Use deterministic algorithms for reproducibility.
+  Benefits: Ensures consistent results across different runs.
+
+- Randomness Control Checker (PyTorch-Dataloader)
+  Framework: PyTorch
+  How to fix: Set worker_init_fn and generator in DataLoader.
+  Benefits: Ensures reproducible data loading and augmentation.
+
+- Mask Missing Checker
+  Framework: PyTorch
+  How to fix: Ensure valid arguments for log functions.
+  Benefits: Prevents numerical errors and improves model stability.
+
+- Gradient Clear Checker
+  Framework: PyTorch
+  How to fix: Use optimizer.zero_grad() before loss.backward() and optimizer.step().
+  Benefits: Ensures correct gradient computation and prevents accumulation.
+
+- Batch Normalisation Checker
+  Framework: PyTorch
+  How to fix: Use batch normalisation layers to improve training stability.
+  Benefits: Enhances model performance and convergence speed.
+
+- Dropout Usage Checker
+  Framework: PyTorch
+  How to fix: Use dropout layers to mitigate overfitting.
+  Benefits: Prevents overfitting and enhances generalisation of the model.
+
+- Data Augmentation Checker
+  Framework: PyTorch
+  How to fix: Implement data augmentation to increase dataset diversity.
+  Benefits: Enhances model performance and reduces overfitting.
+
+- Learning Rate Scheduler Checker
+  Framework: PyTorch
+  How to fix: Use learning rate schedulers for better training optimisation.
+  Benefits: Enhances training efficiency and model accuracy.
+
+- Logging Checker
+  Framework: PyTorch
+  How to fix: Use logging for tracking experiments and results.
+  Benefits: Helps in tracking training progress and diagnosing issues.
+
+- Model Evaluation Checker
+  Framework: PyTorch
+  How to fix: Continuously evaluate model on validation/test datasets.
+  Benefits: Prevents overfitting and ensures robust performance.
+
+- Unit Testing Checker
+  Framework: PyTorch
+  How to fix: Implement unit tests for PyTorch components and models.
+  Benefits: Improves code quality and reduces chances of errors.
+
+- Exception Handling Checker
+  Framework: PyTorch
+  How to fix: Use exception handling to manage potential errors during model operations.
+  Benefits: Ensures graceful handling of errors and robustness of the code.
+
+Smell Counts:
+  Datatype Checker: 1
+  Column Selection Checker: 1
+  Randomness Control Checker: 4
+  Scaler Missing Checker: 1
+  Pipeline Checker: 1
+  Verbose Mode Checker: 1
+  Dependent Threshold Checker: 2
+  Unit Testing Checker: 3
+  Exception Handling Checker: 3
+  Early Stopping Checker: 1
+  Checkpointing Checker: 1
+  Memory Release Checker: 1
+  Mask Missing Checker: 2
+  Tensor Array Checker: 1
+  Logging Checker: 2
+  Batch Normalisation Checker: 2
+  Dropout Usage Checker: 2
+  Data Augmentation Checker: 2
+  Learning Rate Scheduler Checker: 2
+  Model Evaluation Checker: 2
+  Deterministic Algorithm Usage Checker: 1
+  Randomness Control Checker (PyTorch-Dataloader): 1
+  Gradient Clear Checker: 1
+Total smells detected: 38
+
+
+Hugging Face Smells:
+- Model versioning not specified
+  Framework: Hugging Face
+  How to fix: Specify model version when loading pre-trained models
+  Benefits: Ensures consistency and reproducibility of results
+  Location: Line 70
+
+- Model versioning not specified
+  Framework: Hugging Face
+  How to fix: Specify model version when loading pre-trained models
+  Benefits: Ensures consistency and reproducibility of results
+  Location: Line 71
+
+- Tokenizer caching not used
+  Framework: Hugging Face
+  How to fix: Cache tokenizers to avoid re-downloading
+  Benefits: Reduces loading time and network dependency
+  Location: Line 71
+
+- Model caching not used
+  Framework: Hugging Face
+  How to fix: Cache models to avoid re-downloading
+  Benefits: Improves loading efficiency and reduces network dependency
+  Location: Line 70
+
+- Deterministic tokenization settings not specified
+  Framework: Hugging Face
+  How to fix: Use consistent tokenization settings
+  Benefits: Ensures reproducible pre-processing and consistent model inputs
+  Location: Line 71
+
+- Efficient data loading not detected
+  Framework: Hugging Face
+  How to fix: Use efficient data loading techniques
+  Benefits: Enhances data processing speed and model training efficiency
+
+- Distributed training not configured
+  Framework: Hugging Face
+  How to fix: Utilize distributed training capabilities
+  Benefits: Speeds up training and leverages multiple GPUs/TPUs
+
+- Mixed precision training not enabled
+  Framework: Hugging Face
+  How to fix: Use mixed precision training to improve performance
+  Benefits: Accelerates training and reduces memory usage
+
+- Gradient accumulation not configured
+  Framework: Hugging Face
+  How to fix: Implement gradient accumulation for large batch sizes
+  Benefits: Allows training with larger effective batch sizes and improves convergence
+
+- Learning rate scheduler not detected
+  Framework: Hugging Face
+  How to fix: Use learning rate schedulers to dynamically adjust learning rate
+  Benefits: Optimizes training process and enhances model performance
+
+- Early stopping not implemented
+  Framework: Hugging Face
+  How to fix: Implement early stopping to avoid overfitting
+  Benefits: Prevents overfitting and reduces unnecessary training time
+
+Smell Counts:
+  Model versioning not specified: 2
+  Tokenizer caching not used: 1
+  Model caching not used: 1
+  Deterministic tokenization settings not specified: 1
+  Efficient data loading not detected: 1
+  Distributed training not configured: 1
+  Mixed precision training not enabled: 1
+  Gradient accumulation not configured: 1
+  Learning rate scheduler not detected: 1
+  Early stopping not implemented: 1
+Total smells detected: 11
+
+
+General ML Smells:
+- Feature scaling detected. Ensure consistent application across features and datasets.
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 21
+
+- Model saving detected. Ensure proper versioning and saving of preprocessing steps.
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 94
+
+- No random seed setting detected. Consider setting seeds for reproducibility.
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 106
+
+- Data loading detected. For large datasets, consider using generators or batch processing.
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 13
+
+- No error handling detected in data processing. Consider adding try-except blocks for robustness.
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+
+- Hardcoded file path detected: ./results
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 74
+
+- Hardcoded file path detected: ./logs
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 80
+
+- Missing docstring for function: __init__
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 53
+
+- Missing docstring for function: forward
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 59
+
+- Missing docstring for class: PyTorchModel
+  Framework: General ML
+  How to fix: Not specified
+  Benefits: Not specified
+  Location: Line 52
+
+Smell Counts:
+  Feature scaling detected. Ensure consistent application across features and datasets.: 1
+  Model saving detected. Ensure proper versioning and saving of preprocessing steps.: 1
+  No random seed setting detected. Consider setting seeds for reproducibility.: 1
+  Data loading detected. For large datasets, consider using generators or batch processing.: 1
+  No error handling detected in data processing. Consider adding try-except blocks for robustness.: 1
+  Hardcoded file path detected: ./results: 1
+  Hardcoded file path detected: ./logs: 1
+  Missing docstring for function: __init__: 1
+  Missing docstring for function: forward: 1
+  Missing docstring for class: PyTorchModel: 1
+Total smells detected: 10
+

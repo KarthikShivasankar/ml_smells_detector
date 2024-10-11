@@ -1,0 +1,60 @@
+Framework,Smell/Checker Name,How to Fix,Benefits,File Path,Location,Count
+Pandas,Datatype Checker,Set data types explicitly when importing data.,Ensures correct data format and reduces memory usage.,test_all.py,Line 13,1
+Pandas,Column Selection Checker,Select necessary columns after importing DataFrame.,Clarifies data usage and improves performance.,test_all.py,,1
+NumPy,Randomness Control Checker,Use np.seed() for reproducibility.,Enables reproducible results and debugging.,test_all.py,,4
+ScikitLearn,Scaler Missing Checker,Apply scaling before scaling-sensitive operations.,Improves model performance and accuracy.,test_all.py,,1
+ScikitLearn,Pipeline Checker,Use Pipelines for all scikit-learn estimators.,Prevents data leakage and ensures correct model evaluation.,test_all.py,,1
+ScikitLearn,Randomness Control Checker,Remove random_state=None in estimators.,Ensures reproducible results and consistent model behaviour.,test_all.py,,4
+ScikitLearn,Verbose Mode Checker,Use verbose mode for long training processes.,Provides better insights into model training progress and potential issues.,test_all.py,,1
+ScikitLearn,Dependent Threshold Checker,Use threshold-independent metrics alongside threshold-dependent metrics.,Provides a comprehensive evaluation of model performance.,test_all.py,,2
+ScikitLearn,Unit Testing Checker,Write unit tests for data processing and model components.,Ensures code reliability and prevents bugs.,test_all.py,,3
+ScikitLearn,Exception Handling Checker,Handle exceptions in data processing and model training steps.,Prevents crashes and provides informative error messages.,test_all.py,,3
+TensorFlow,Randomness Control Checker,Use tf.random.set_seed() for reproducibility.,Ensures reproducible training results.,test_all.py,,4
+TensorFlow,Early Stopping Checker,Implement early stopping to prevent overfitting.,"Reduces overfitting and training time, improves generalisation.",test_all.py,,1
+TensorFlow,Checkpointing Checker,Save model checkpoints during training.,Prevents data loss and allows training to resume from a specific point.,test_all.py,,1
+TensorFlow,Memory Release Checker,Clear memory if a neural network is created in a loop.,Prevents memory leaks and improves performance.,test_all.py,,1
+TensorFlow,Mask Missing Checker,Ensure valid arguments for log functions.,Prevents numerical errors and improves model stability.,test_all.py,,2
+TensorFlow,Tensor Array Checker,Use tf.TensorArray() for growing arrays in loops.,Enhances performance and reduces memory usage.,test_all.py,,1
+TensorFlow,Dependent Threshold Checker,Use threshold-independent metrics alongside threshold-dependent metrics.,Provides a comprehensive evaluation of model performance.,test_all.py,,2
+TensorFlow,Logging Checker,Use logging for tracking experiments and results.,"Facilitates debugging and experiment tracking, improves reproducibility.",test_all.py,,2
+TensorFlow,Batch Normalisation Checker,Use batch normalisation layers to improve training stability.,"Stabilises and accelerates training, improves model performance.",test_all.py,,2
+TensorFlow,Dropout Usage Checker,Apply dropout layers to reduce overfitting.,Reduces overfitting and improves model generalisation.,test_all.py,,2
+TensorFlow,Data Augmentation Checker,Apply data augmentation techniques to enhance model robustness.,Improves model generalisation and robustness.,test_all.py,,2
+TensorFlow,Learning Rate Scheduler Checker,Implement learning rate schedulers for dynamic learning rate adjustment.,Optimises training process and improves model performance.,test_all.py,,2
+TensorFlow,Model Evaluation Checker,Evaluate model performance on validation/test data regularly.,Ensures model is generalising well to unseen data.,test_all.py,,2
+TensorFlow,Unit Testing Checker,Develop unit tests for TensorFlow components and workflows.,Enhances code robustness and reliability.,test_all.py,,3
+TensorFlow,Exception Handling Checker,Implement proper exception handling for model training and inference.,Improves code robustness and error management.,test_all.py,,3
+PyTorch,Randomness Control Checker,Use torch.manual_seed() for reproducibility.,Enables consistent and reproducible results.,test_all.py,,4
+PyTorch,Deterministic Algorithm Usage Checker,Use deterministic algorithms for reproducibility.,Ensures consistent results across different runs.,test_all.py,,1
+PyTorch,Randomness Control Checker (PyTorch-Dataloader),Set worker_init_fn and generator in DataLoader.,Ensures reproducible data loading and augmentation.,test_all.py,,1
+PyTorch,Mask Missing Checker,Ensure valid arguments for log functions.,Prevents numerical errors and improves model stability.,test_all.py,,2
+PyTorch,Gradient Clear Checker,Use optimizer.zero_grad() before loss.backward() and optimizer.step().,Ensures correct gradient computation and prevents accumulation.,test_all.py,,1
+PyTorch,Batch Normalisation Checker,Use batch normalisation layers to improve training stability.,Enhances model performance and convergence speed.,test_all.py,,2
+PyTorch,Dropout Usage Checker,Use dropout layers to mitigate overfitting.,Prevents overfitting and enhances generalisation of the model.,test_all.py,,2
+PyTorch,Data Augmentation Checker,Implement data augmentation to increase dataset diversity.,Enhances model performance and reduces overfitting.,test_all.py,,2
+PyTorch,Learning Rate Scheduler Checker,Use learning rate schedulers for better training optimisation.,Enhances training efficiency and model accuracy.,test_all.py,,2
+PyTorch,Logging Checker,Use logging for tracking experiments and results.,Helps in tracking training progress and diagnosing issues.,test_all.py,,2
+PyTorch,Model Evaluation Checker,Continuously evaluate model on validation/test datasets.,Prevents overfitting and ensures robust performance.,test_all.py,,2
+PyTorch,Unit Testing Checker,Implement unit tests for PyTorch components and models.,Improves code quality and reduces chances of errors.,test_all.py,,3
+PyTorch,Exception Handling Checker,Use exception handling to manage potential errors during model operations.,Ensures graceful handling of errors and robustness of the code.,test_all.py,,3
+Hugging Face,Model versioning not specified,Specify model version when loading pre-trained models,Ensures consistency and reproducibility of results,test_all.py,Line 70,2
+Hugging Face,Model versioning not specified,Specify model version when loading pre-trained models,Ensures consistency and reproducibility of results,test_all.py,Line 71,2
+Hugging Face,Tokenizer caching not used,Cache tokenizers to avoid re-downloading,Reduces loading time and network dependency,test_all.py,Line 71,1
+Hugging Face,Model caching not used,Cache models to avoid re-downloading,Improves loading efficiency and reduces network dependency,test_all.py,Line 70,1
+Hugging Face,Deterministic tokenization settings not specified,Use consistent tokenization settings,Ensures reproducible pre-processing and consistent model inputs,test_all.py,Line 71,1
+Hugging Face,Efficient data loading not detected,Use efficient data loading techniques,Enhances data processing speed and model training efficiency,test_all.py,,1
+Hugging Face,Distributed training not configured,Utilize distributed training capabilities,Speeds up training and leverages multiple GPUs/TPUs,test_all.py,,1
+Hugging Face,Mixed precision training not enabled,Use mixed precision training to improve performance,Accelerates training and reduces memory usage,test_all.py,,1
+Hugging Face,Gradient accumulation not configured,Implement gradient accumulation for large batch sizes,Allows training with larger effective batch sizes and improves convergence,test_all.py,,1
+Hugging Face,Learning rate scheduler not detected,Use learning rate schedulers to dynamically adjust learning rate,Optimizes training process and enhances model performance,test_all.py,,1
+Hugging Face,Early stopping not implemented,Implement early stopping to avoid overfitting,Prevents overfitting and reduces unnecessary training time,test_all.py,,1
+General ML,Feature scaling detected. Ensure consistent application across features and datasets.,Not specified,Not specified,test_all.py,Line 21,1
+General ML,Model saving detected. Ensure proper versioning and saving of preprocessing steps.,Not specified,Not specified,test_all.py,Line 94,1
+General ML,No random seed setting detected. Consider setting seeds for reproducibility.,Not specified,Not specified,test_all.py,Line 106,1
+General ML,"Data loading detected. For large datasets, consider using generators or batch processing.",Not specified,Not specified,test_all.py,Line 13,1
+General ML,No error handling detected in data processing. Consider adding try-except blocks for robustness.,Not specified,Not specified,test_all.py,,1
+General ML,Hardcoded file path detected: ./results,Not specified,Not specified,test_all.py,Line 74,1
+General ML,Hardcoded file path detected: ./logs,Not specified,Not specified,test_all.py,Line 80,1
+General ML,Missing docstring for function: __init__,Not specified,Not specified,test_all.py,Line 53,1
+General ML,Missing docstring for function: forward,Not specified,Not specified,test_all.py,Line 59,1
+General ML,Missing docstring for class: PyTorchModel,Not specified,Not specified,test_all.py,Line 52,1
