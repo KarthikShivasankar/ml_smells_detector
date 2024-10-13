@@ -1,6 +1,7 @@
 import astroid
 from astroid import nodes
 from typing import List, Dict, Any
+import sys
 
 class ML_SmellDetector:
     def __init__(self):
@@ -19,11 +20,32 @@ class ML_SmellDetector:
         })
 
     def detect_smells(self, file_path: str) -> List[Dict[str, Any]]:
-        with open(file_path, 'r') as file:
-            content = file.read()
-        module = astroid.parse(content)
-        self.visit_module(module, file_path)
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+            module = astroid.parse(content, module_name=file_path)
+            
+            # Check if any ML-related packages are imported
+            ml_packages = ['pandas', 'numpy', 'sklearn', 'tensorflow', 'torch', 'transformers']
+            if any(self.is_package_used(module, package) for package in ml_packages):
+                self.visit_module(module, file_path)
+            else:
+                print(f"Skipping ML smell detection for {file_path}: No ML-related packages imported", file=sys.stderr)
+        except astroid.exceptions.AstroidSyntaxError as e:
+            print(f"Error parsing {file_path}: {str(e)}", file=sys.stderr)
+        except Exception as e:
+            print(f"Unexpected error while processing {file_path}: {str(e)}", file=sys.stderr)
         return self.smells
+
+    def is_package_used(self, node: nodes.Module, package: str) -> bool:
+        for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
+            if isinstance(import_node, nodes.Import):
+                if any(name.split('.')[0] == package for name, _ in import_node.names):
+                    return True
+            elif isinstance(import_node, nodes.ImportFrom):
+                if import_node.modname.split('.')[0] == package:
+                    return True
+        return False
 
     def visit_module(self, node: nodes.Module, file_path: str):
         self.check_imports(node, file_path)
@@ -213,4 +235,3 @@ class ML_SmellDetector:
             }
             for smell in self.smells
         ]
-

@@ -1,17 +1,38 @@
 import astroid
 from astroid import nodes
 from typing import List, Dict, Any
+import sys
 
 class HuggingFaceSmellDetector:
     def __init__(self):
         self.smells: List[Dict[str, Any]] = []
 
     def detect_smells(self, file_path: str) -> List[Dict[str, Any]]:
-        with open(file_path, 'r') as file:
-            content = file.read()
-        module = astroid.parse(content)
-        self.visit_module(module, file_path)
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+            module = astroid.parse(content, module_name=file_path)
+            
+            # Check if 'transformers' is imported
+            if self.is_framework_used(module, 'transformers'):
+                self.visit_module(module, file_path)
+            else:
+                print(f"Skipping Hugging Face smell detection for {file_path}: 'transformers' not imported", file=sys.stderr)
+        except astroid.exceptions.AstroidSyntaxError as e:
+            print(f"Error parsing {file_path}: {str(e)}", file=sys.stderr)
+        except Exception as e:
+            print(f"Unexpected error while processing {file_path}: {str(e)}", file=sys.stderr)
         return self.smells
+
+    def is_framework_used(self, node: nodes.Module, framework: str) -> bool:
+        for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
+            if isinstance(import_node, nodes.Import):
+                if any(name == framework for name, _ in import_node.names):
+                    return True
+            elif isinstance(import_node, nodes.ImportFrom):
+                if import_node.modname == framework:
+                    return True
+        return False
 
     def visit_module(self, node: nodes.Module, file_path: str):
         self.check_model_versioning(node, file_path)
