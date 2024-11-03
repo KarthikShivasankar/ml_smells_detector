@@ -41,4 +41,3 @@ def test_documentation_detection(tmp_path):
     smells = detector.detect_smells(str(test_file))
     assert any("Missing docstring" in smell['smell'] for smell in smells)
 
-# Add more tests for specific smell detection methods

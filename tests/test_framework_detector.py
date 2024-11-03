@@ -43,4 +43,3 @@ def test_generate_report():
     assert 'Better code' in report
     assert 'Do this' in report
 
-# Add more tests for specific smell detection methods

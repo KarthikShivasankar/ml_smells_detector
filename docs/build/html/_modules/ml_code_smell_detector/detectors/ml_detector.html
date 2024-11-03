@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ml_code_smell_detector.detectors.ml_detector &mdash; ML Code Smell Detector 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ML Code Smell Detector
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detectors/index.html">Detectors</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ML Code Smell Detector</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ml_code_smell_detector.detectors.ml_detector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ml_code_smell_detector.detectors.ml_detector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">astroid</span>
+<span class="kn">from</span> <span class="nn">astroid</span> <span class="kn">import</span> <span class="n">nodes</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<div class="viewcode-block" id="ML_SmellDetector">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector">[docs]</a>
+<span class="k">class</span> <span class="nc">ML_SmellDetector</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A detector for identifying common code smells in machine learning code.</span>
+
+<span class="sd">    This class analyzes Python source code to detect potential issues and anti-patterns</span>
+<span class="sd">    commonly found in machine learning projects, such as data leakage, improper feature</span>
+<span class="sd">    scaling, missing cross-validation, and more.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the ML smell detector with empty collections for tracking analysis results.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="ML_SmellDetector.add_smell">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.add_smell">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_smell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smell</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">NodeNG</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a detected code smell to the collection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            smell: Description of the detected smell</span>
+<span class="sd">            node: The AST node where the smell was detected</span>
+<span class="sd">            file_path: Path to the file containing the smell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;smell&quot;</span><span class="p">:</span> <span class="n">smell</span><span class="p">,</span>
+            <span class="s2">&quot;line_number&quot;</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span>
+            <span class="s2">&quot;code_snippet&quot;</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">as_string</span><span class="p">(),</span>
+            <span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="n">file_path</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.detect_smells">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.detect_smells">[docs]</a>
+    <span class="k">def</span> <span class="nf">detect_smells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Analyze a Python file for ML-related code smells.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path: Path to the Python file to analyze</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of dictionaries containing detected smell information</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="n">astroid</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">module_name</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
+            
+            <span class="c1"># Check if any ML-related packages are imported</span>
+            <span class="n">ml_packages</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pandas&#39;</span><span class="p">,</span> <span class="s1">&#39;numpy&#39;</span><span class="p">,</span> <span class="s1">&#39;sklearn&#39;</span><span class="p">,</span> <span class="s1">&#39;tensorflow&#39;</span><span class="p">,</span> <span class="s1">&#39;torch&#39;</span><span class="p">,</span> <span class="s1">&#39;transformers&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_package_used</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">package</span><span class="p">)</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">ml_packages</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">visit_module</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping ML smell detection for </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: No ML-related packages imported&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">astroid</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">AstroidSyntaxError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error parsing </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error while processing </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smells</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.is_package_used">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.is_package_used">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_package_used</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">package</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a specific package is imported in the module.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            package: Name of the package to check for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the package is imported, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">import_node</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">((</span><span class="n">nodes</span><span class="o">.</span><span class="n">Import</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">import_node</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Import</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">package</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">import_node</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">import_node</span><span class="o">.</span><span class="n">modname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">package</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.visit_module">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.visit_module">[docs]</a>
+    <span class="k">def</span> <span class="nf">visit_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run all smell detection checks on a module.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_imports</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_data_leakage</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_magic_numbers</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_feature_scaling</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_cross_validation</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_imbalanced_dataset</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_feature_selection</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_metric_selection</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_model_persistence</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_reproducibility</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_data_loading</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_unused_features</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_overfit_prone_practices</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_error_handling</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_hardcoded_filepaths</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_documentation</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+        
+
+<div class="viewcode-block" id="ML_SmellDetector.check_imports">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_imports">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_imports</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Track imports used in the module for later analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">import_node</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">((</span><span class="n">nodes</span><span class="o">.</span><span class="n">Import</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">import_node</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Import</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="p">[</span><span class="n">alias</span> <span class="ow">or</span> <span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">import_node</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="p">[</span><span class="n">alias</span> <span class="ow">or</span> <span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">import_node</span><span class="o">.</span><span class="n">modname</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_data_leakage">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_data_leakage">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_data_leakage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect potential data leakage from preprocessing before train-test split.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">):</span>
+            <span class="n">preprocessing_before_split</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">train_test_split_pos</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">last_preprocessing_pos</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            
+            <span class="c1"># Get all Call nodes in order of appearance</span>
+            <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;fit&#39;</span><span class="p">,</span> <span class="s1">&#39;fit_transform&#39;</span><span class="p">)):</span>
+                    <span class="n">preprocessing_before_split</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">last_preprocessing_pos</span> <span class="o">=</span> <span class="n">call</span><span class="o">.</span><span class="n">lineno</span>
+                <span class="k">elif</span> <span class="s1">&#39;train_test_split&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                    <span class="n">train_test_split_pos</span> <span class="o">=</span> <span class="n">call</span><span class="o">.</span><span class="n">lineno</span>
+            
+            <span class="c1"># Only flag if preprocessing occurs before train_test_split in the same function</span>
+            <span class="k">if</span> <span class="n">preprocessing_before_split</span> <span class="ow">and</span> <span class="n">train_test_split_pos</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">last_preprocessing_pos</span> <span class="o">&lt;</span> <span class="n">train_test_split_pos</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Potential data leakage: Preprocessing applied before train-test split&quot;</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_magic_numbers">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_magic_numbers">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_magic_numbers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect magic numbers in ML-related code.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Common acceptable values that shouldn&#39;t trigger warnings</span>
+        <span class="n">acceptable_values</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">}</span>  <span class="c1"># Common ML-related constants</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Const</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="c1"># Skip if it&#39;s an acceptable value</span>
+                <span class="k">if</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span> <span class="ow">in</span> <span class="n">acceptable_values</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="c1"># Skip if the variable name suggests it&#39;s a legitimate constant</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> 
+                    <span class="p">[</span><span class="s1">&#39;num_&#39;</span><span class="p">,</span> <span class="s1">&#39;size_&#39;</span><span class="p">,</span> <span class="s1">&#39;batch_&#39;</span><span class="p">,</span> <span class="s1">&#39;epoch&#39;</span><span class="p">,</span> <span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <span class="s1">&#39;lr_&#39;</span><span class="p">,</span> <span class="s1">&#39;threshold_&#39;</span><span class="p">]):</span>
+                    <span class="k">continue</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Magic number detected: </span><span class="si">{</span><span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">assign</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_feature_scaling">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_feature_scaling">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_feature_scaling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect inconsistent feature scaling methods across the codebase.</span>
+
+<span class="sd">        Looks for multiple different scaling methods (StandardScaler, MinMaxScaler, etc.)</span>
+<span class="sd">        being used, which could lead to inconsistent results.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scaling_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;StandardScaler&#39;</span><span class="p">,</span> <span class="s1">&#39;MinMaxScaler&#39;</span><span class="p">,</span> <span class="s1">&#39;RobustScaler&#39;</span><span class="p">]</span>
+        <span class="n">scaling_detected</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">inconsistent_scaling</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">scalers_used</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">scaling_methods</span><span class="p">):</span>
+                <span class="n">scaling_detected</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">scalers_used</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">())</span>
+                
+        <span class="c1"># Only raise warning if multiple different scaling methods are used</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">scalers_used</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inconsistent scaling methods detected: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">scalers_used</span><span class="p">)</span><span class="si">}</span><span class="s2">. Consider using the same scaler across the pipeline.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_cross_validation">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_cross_validation">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_cross_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if cross-validation is properly implemented in model training.</span>
+
+<span class="sd">        Detects if common cross-validation methods (KFold, cross_val_score, etc.)</span>
+<span class="sd">        are missing in model training code.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cv_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;cross_val_score&#39;</span><span class="p">,</span> <span class="s1">&#39;KFold&#39;</span><span class="p">,</span> <span class="s1">&#39;cross_validate&#39;</span><span class="p">,</span> <span class="s1">&#39;GridSearchCV&#39;</span><span class="p">,</span> <span class="s1">&#39;RandomizedSearchCV&#39;</span><span class="p">]</span>
+        <span class="n">cv_detected</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Only check if this appears to be a model training file</span>
+        <span class="n">is_training_file</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="c1"># Check if file contains model training code</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;fit&#39;</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;compile&#39;</span><span class="p">]):</span>
+                <span class="n">is_training_file</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">cv_methods</span><span class="p">):</span>
+                <span class="n">cv_detected</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+                
+        <span class="k">if</span> <span class="n">is_training_file</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">cv_detected</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Cross-validation not detected in model training code. Consider using cross-validation for more robust evaluation.&quot;</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_imbalanced_dataset">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_imbalanced_dataset">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_imbalanced_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if imbalanced dataset handling techniques are used in classification tasks.</span>
+
+<span class="sd">        Looks for common techniques like SMOTE, class weights, or stratification</span>
+<span class="sd">        when dealing with classification problems.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">balance_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SMOTE&#39;</span><span class="p">,</span> <span class="s1">&#39;class_weight&#39;</span><span class="p">,</span> <span class="s1">&#39;StratifiedKFold&#39;</span><span class="p">,</span> <span class="s1">&#39;RandomOverSampler&#39;</span><span class="p">,</span> <span class="s1">&#39;RandomUnderSampler&#39;</span><span class="p">]</span>
+        <span class="n">imbalance_handling</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">is_classification</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="c1"># First check if this is a classification task</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">clf</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">clf</span> <span class="ow">in</span> 
+                <span class="p">[</span><span class="s1">&#39;Classifier&#39;</span><span class="p">,</span> <span class="s1">&#39;LogisticRegression&#39;</span><span class="p">,</span> <span class="s1">&#39;SVC&#39;</span><span class="p">,</span> <span class="s1">&#39;RandomForestClassifier&#39;</span><span class="p">]):</span>
+                <span class="n">is_classification</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        
+        <span class="k">if</span> <span class="n">is_classification</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">balance_methods</span><span class="p">):</span>
+                    <span class="n">imbalance_handling</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">imbalance_handling</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;No imbalanced dataset handling detected in classification task. Consider techniques like SMOTE or class weights if dealing with imbalanced data.&quot;</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_feature_selection">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_feature_selection">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_feature_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect feature selection practices and validate their implementation.</span>
+
+<span class="sd">        Ensures feature selection is performed with proper validation strategy</span>
+<span class="sd">        to avoid selection bias.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">feature_selection_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SelectKBest&#39;</span><span class="p">,</span> <span class="s1">&#39;RFE&#39;</span><span class="p">,</span> <span class="s1">&#39;SelectFromModel&#39;</span><span class="p">,</span> <span class="s1">&#39;PCA&#39;</span><span class="p">,</span> <span class="s1">&#39;VarianceThreshold&#39;</span><span class="p">]</span>
+        <span class="n">feature_selection</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">validation_detected</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">feature_selection_methods</span><span class="p">):</span>
+                <span class="n">feature_selection</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Check for validation methods</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cross_val_score&#39;</span><span class="p">,</span> <span class="s1">&#39;train_test_split&#39;</span><span class="p">,</span> <span class="s1">&#39;GridSearchCV&#39;</span><span class="p">]):</span>
+                <span class="n">validation_detected</span> <span class="o">=</span> <span class="kc">True</span>
+                
+        <span class="k">if</span> <span class="n">feature_selection</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">validation_detected</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Feature selection detected without clear validation strategy. Ensure it&#39;s applied with proper validation to avoid selection bias.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_metric_selection">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_metric_selection">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_metric_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate the choice of evaluation metrics for ML models.</span>
+
+<span class="sd">        Ensures appropriate metrics are used for classification and regression tasks,</span>
+<span class="sd">        warning against using only basic metrics like accuracy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">is_classification</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">is_regression</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="c1"># First determine if it&#39;s classification or regression</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">clf</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">clf</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Classifier&#39;</span><span class="p">,</span> <span class="s1">&#39;LogisticRegression&#39;</span><span class="p">,</span> <span class="s1">&#39;SVC&#39;</span><span class="p">]):</span>
+                <span class="n">is_classification</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">reg</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Regressor&#39;</span><span class="p">,</span> <span class="s1">&#39;LinearRegression&#39;</span><span class="p">,</span> <span class="s1">&#39;SVR&#39;</span><span class="p">]):</span>
+                <span class="n">is_regression</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="c1"># Collect metrics</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">metric</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="s1">&#39;accuracy_score&#39;</span><span class="p">,</span> <span class="s1">&#39;precision_score&#39;</span><span class="p">,</span> <span class="s1">&#39;recall_score&#39;</span><span class="p">,</span> <span class="s1">&#39;f1_score&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;mean_squared_error&#39;</span><span class="p">,</span> <span class="s1">&#39;r2_score&#39;</span><span class="p">,</span> <span class="s1">&#39;mean_absolute_error&#39;</span>
+            <span class="p">]):</span>
+                <span class="n">metrics</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">())</span>
+        
+        <span class="c1"># Only raise warnings for specific cases</span>
+        <span class="k">if</span> <span class="n">is_classification</span> <span class="ow">and</span> <span class="s1">&#39;accuracy_score&#39;</span> <span class="ow">in</span> <span class="n">metrics</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Only accuracy metric detected for classification. Consider adding precision, recall, or F1-score for a more comprehensive evaluation.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_regression</span> <span class="ow">and</span> <span class="s1">&#39;mean_squared_error&#39;</span> <span class="ow">in</span> <span class="n">metrics</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Only MSE detected for regression. Consider adding R2 score or MAE for a more comprehensive evaluation.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_model_persistence">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_model_persistence">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_model_persistence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check model saving practices and associated preprocessing steps.</span>
+
+<span class="sd">        Ensures models are saved with their preprocessing steps and proper versioning</span>
+<span class="sd">        for reproducibility.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">model_save</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">preprocessing_save</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">version_control</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">save</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">save</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;save&#39;</span><span class="p">,</span> <span class="s1">&#39;dump&#39;</span><span class="p">,</span> <span class="s1">&#39;to_pickle&#39;</span><span class="p">]):</span>
+                <span class="n">model_save</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># Check for preprocessing steps being saved</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">prep</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">prep</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;scaler&#39;</span><span class="p">,</span> <span class="s1">&#39;encoder&#39;</span><span class="p">,</span> <span class="s1">&#39;preprocessor&#39;</span><span class="p">]):</span>
+                    <span class="n">preprocessing_save</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># Check for version control</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">ver</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">,</span> <span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">]):</span>
+                    <span class="n">version_control</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="k">if</span> <span class="n">model_save</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">preprocessing_save</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Model saving detected without preprocessing steps. Remember to save preprocessing steps for proper model deployment.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">model_save</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">version_control</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Model saving detected without clear versioning. Consider adding version control for model artifacts.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_reproducibility">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_reproducibility">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_reproducibility</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if random seeds are properly set for reproducibility.</span>
+
+<span class="sd">        Ensures random seeds are set for all relevant libraries (numpy, random, </span>
+<span class="sd">        framework-specific) in ML operations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">seed_methods</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;random_state&#39;</span><span class="p">,</span> <span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="s1">&#39;torch.manual_seed&#39;</span><span class="p">,</span> <span class="s1">&#39;tf.random.set_seed&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;np.random.seed&#39;</span><span class="p">,</span> <span class="s1">&#39;random.seed&#39;</span>
+        <span class="p">}</span>
+        <span class="n">seeds_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">has_ml_operations</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="c1"># Check if file contains ML operations</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">op</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;fit&#39;</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;predict&#39;</span><span class="p">,</span> <span class="s1">&#39;transform&#39;</span><span class="p">]):</span>
+                <span class="n">has_ml_operations</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="c1"># Check for seed setting</span>
+            <span class="k">for</span> <span class="n">seed_method</span> <span class="ow">in</span> <span class="n">seed_methods</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">seed_method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                    <span class="n">seeds_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">seed_method</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">has_ml_operations</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">seeds_set</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;No random seed setting detected in ML operations. Consider setting seeds for reproducibility.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">has_ml_operations</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">seeds_set</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">framework</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span> <span class="k">for</span> <span class="n">framework</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;tensorflow&#39;</span><span class="p">,</span> <span class="s1">&#39;torch&#39;</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Incomplete seed setting detected. Remember to set seeds for all relevant libraries (numpy, random, framework-specific).&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_data_loading">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_data_loading">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_data_loading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Analyze data loading practices for potential issues.</span>
+
+<span class="sd">        Checks for proper handling of large datasets, including batch processing</span>
+<span class="sd">        and file size checks.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data_loading_methods</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;read_csv&#39;</span><span class="p">,</span> <span class="s1">&#39;load_data&#39;</span><span class="p">,</span> <span class="s1">&#39;read_excel&#39;</span><span class="p">,</span> <span class="s1">&#39;read_parquet&#39;</span><span class="p">}</span>
+        <span class="n">batch_processing_methods</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;batch_size&#39;</span><span class="p">,</span> <span class="s1">&#39;generator&#39;</span><span class="p">,</span> <span class="s1">&#39;DataLoader&#39;</span><span class="p">,</span> <span class="s1">&#39;dataset&#39;</span><span class="p">}</span>
+        <span class="n">file_size_check</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">batch_processing</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">data_loading_methods</span><span class="p">):</span>
+                <span class="c1"># Check for file size checks or batch processing</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">check</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;os.path.getsize&#39;</span><span class="p">,</span> <span class="s1">&#39;file_size&#39;</span><span class="p">]):</span>
+                    <span class="n">file_size_check</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">batch_processing_methods</span><span class="p">):</span>
+                    <span class="n">batch_processing</span> <span class="o">=</span> <span class="kc">True</span>
+                
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">file_size_check</span> <span class="ow">or</span> <span class="n">batch_processing</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="s2">&quot;Data loading detected without size checks or batch processing. Consider using generators or batch processing for large datasets.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_unused_features">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_unused_features">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_unused_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect potentially unused features or variables in ML code.</span>
+
+<span class="sd">        Identifies variables that are defined but not used, excluding common</span>
+<span class="sd">        variable names and special prefixes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">used_features</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">common_vars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;j&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;df&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">}</span>  <span class="c1"># Common variable names to ignore</span>
+        
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+                <span class="c1"># Skip common variables and those with special prefixes</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">common_vars</span> <span class="ow">and</span> 
+                    <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="s1">&#39;temp_&#39;</span><span class="p">,</span> <span class="s1">&#39;tmp_&#39;</span><span class="p">])):</span>
+                    <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">):</span>
+            <span class="n">used_features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+        <span class="n">unused</span> <span class="o">=</span> <span class="n">features</span> <span class="o">-</span> <span class="n">used_features</span> <span class="o">-</span> <span class="n">common_vars</span>
+        <span class="k">if</span> <span class="n">unused</span><span class="p">:</span>
+            <span class="c1"># Additional check for usage in string literals (e.g., in column selections)</span>
+            <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Const</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">unused</span> <span class="o">=</span> <span class="n">unused</span> <span class="o">-</span> <span class="p">{</span><span class="n">feat</span> <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">unused</span> <span class="k">if</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">value</span><span class="p">}</span>
+            
+            <span class="k">if</span> <span class="n">unused</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Potentially unused features detected: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">unused</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">assign</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_overfit_prone_practices">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_overfit_prone_practices">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_overfit_prone_practices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect practices that might lead to overfitting.</span>
+
+<span class="sd">        Checks feature engineering functions for proper train/test separation</span>
+<span class="sd">        to avoid data leakage.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">):</span>
+            <span class="c1"># Check if it&#39;s a feature engineering function</span>
+            <span class="k">if</span> <span class="s1">&#39;feature_engineering&#39;</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="c1"># Skip if it&#39;s clearly marked as training-specific</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">safe_term</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">safe_term</span> <span class="ow">in</span> 
+                    <span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;fit&#39;</span><span class="p">,</span> <span class="s1">&#39;training_only&#39;</span><span class="p">,</span> <span class="s1">&#39;train_set&#39;</span><span class="p">]):</span>
+                    <span class="k">continue</span>
+                    
+                <span class="c1"># Check function body for train/test split handling</span>
+                <span class="n">has_split_handling</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">split_term</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">split_term</span> <span class="ow">in</span> 
+                        <span class="p">[</span><span class="s1">&#39;train_test_split&#39;</span><span class="p">,</span> <span class="s1">&#39;validation&#39;</span><span class="p">,</span> <span class="s1">&#39;train_data&#39;</span><span class="p">,</span> <span class="s1">&#39;test_data&#39;</span><span class="p">]):</span>
+                        <span class="n">has_split_handling</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">break</span>
+                
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">has_split_handling</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Feature engineering function detected without clear train/test separation. &quot;</span>
+                        <span class="s2">&quot;Ensure it&#39;s not applied to the entire dataset to avoid data leakage.&quot;</span><span class="p">,</span> 
+                        <span class="n">func</span><span class="p">,</span> <span class="n">file_path</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_error_handling">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_error_handling">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_error_handling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check for proper error handling in critical ML operations.</span>
+
+<span class="sd">        Ensures try-except blocks or validation checks are present for data</span>
+<span class="sd">        operations and model-related tasks.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">has_data_operations</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">has_error_handling</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">critical_operations</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;read_csv&#39;</span><span class="p">,</span> <span class="s1">&#39;load_data&#39;</span><span class="p">,</span> <span class="s1">&#39;open&#39;</span><span class="p">,</span> <span class="s1">&#39;fit&#39;</span><span class="p">,</span> <span class="s1">&#39;predict&#39;</span><span class="p">,</span> 
+            <span class="s1">&#39;transform&#39;</span><span class="p">,</span> <span class="s1">&#39;save&#39;</span><span class="p">,</span> <span class="s1">&#39;dump&#39;</span><span class="p">,</span> <span class="s1">&#39;to_pickle&#39;</span>
+        <span class="p">]</span>
+        
+        <span class="c1"># First check if file contains data operations</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">op</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">critical_operations</span><span class="p">):</span>
+                <span class="n">has_data_operations</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        
+        <span class="k">if</span> <span class="n">has_data_operations</span><span class="p">:</span>
+            <span class="c1"># Check for different types of error handling</span>
+            <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">((</span><span class="n">nodes</span><span class="o">.</span><span class="n">Try</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ExceptHandler</span><span class="p">)):</span>
+                <span class="n">has_error_handling</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+                
+            <span class="c1"># Check for if-else validation</span>
+            <span class="k">for</span> <span class="n">if_block</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">If</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">check</span> <span class="ow">in</span> <span class="n">if_block</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> 
+                    <span class="p">[</span><span class="s1">&#39;isinstance&#39;</span><span class="p">,</span> <span class="s1">&#39;isfile&#39;</span><span class="p">,</span> <span class="s1">&#39;exists&#39;</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">,</span> <span class="s1">&#39;empty&#39;</span><span class="p">,</span> <span class="s1">&#39;null&#39;</span><span class="p">]):</span>
+                    <span class="n">has_error_handling</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">has_error_handling</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                    <span class="s2">&quot;No error handling detected in data processing. &quot;</span>
+                    <span class="s2">&quot;Consider adding try-except blocks or validation checks for robustness.&quot;</span><span class="p">,</span> 
+                    <span class="n">node</span><span class="p">,</span> <span class="n">file_path</span>
+                <span class="p">)</span></div>
+
+            
+<div class="viewcode-block" id="ML_SmellDetector.check_hardcoded_filepaths">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_hardcoded_filepaths">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_hardcoded_filepaths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect hardcoded file paths in the code.</span>
+
+<span class="sd">        Identifies hardcoded paths that should be moved to configuration files</span>
+<span class="sd">        or environment variables, excluding common development paths.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Common acceptable patterns</span>
+        <span class="n">acceptable_patterns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;./test/&#39;</span><span class="p">,</span> <span class="s1">&#39;./tests/&#39;</span><span class="p">,</span> 
+            <span class="s1">&#39;../test/&#39;</span><span class="p">,</span> <span class="s1">&#39;../tests/&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fixtures/&#39;</span><span class="p">,</span> <span class="s1">&#39;data/test/&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;__pycache__&#39;</span><span class="p">,</span> <span class="s1">&#39;.git/&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;venv/&#39;</span><span class="p">,</span> <span class="s1">&#39;env/&#39;</span>
+        <span class="p">]</span>
+        
+        <span class="n">config_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="c1"># First collect any config/environment variables</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">config_term</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">config_term</span> <span class="ow">in</span> 
+                    <span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">,</span> <span class="s1">&#39;dir&#39;</span><span class="p">,</span> <span class="s1">&#39;folder&#39;</span><span class="p">,</span> <span class="s1">&#39;file&#39;</span><span class="p">,</span> <span class="s1">&#39;config&#39;</span><span class="p">]):</span>
+                    <span class="n">config_vars</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Const</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">value</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+                <span class="c1"># Skip if it&#39;s a test/common development path</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">pattern</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">acceptable_patterns</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                    
+                <span class="c1"># Skip if it&#39;s used in a config/path variable assignment</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">config_var</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">scope</span><span class="p">()</span><span class="o">.</span><span class="n">locals</span> <span class="k">for</span> <span class="n">config_var</span> <span class="ow">in</span> <span class="n">config_vars</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                    
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Hardcoded file path detected: </span><span class="si">{</span><span class="n">string</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">. &quot;</span>
+                    <span class="s2">&quot;Consider using configuration files or environment variables.&quot;</span><span class="p">,</span> 
+                    <span class="n">string</span><span class="p">,</span> <span class="n">file_path</span>
+                <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.check_documentation">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.check_documentation">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_documentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check for proper documentation in ML-related code.</span>
+
+<span class="sd">        Ensures functions and classes have appropriate docstrings, especially</span>
+<span class="sd">        for those with parameters or return values.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Skip certain types of files/functions</span>
+        <span class="n">skip_patterns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;test_&#39;</span><span class="p">,</span> <span class="s1">&#39;fixture&#39;</span><span class="p">,</span> <span class="s1">&#39;conftest&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;setup&#39;</span><span class="p">,</span> <span class="s1">&#39;init&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;helper&#39;</span><span class="p">,</span> <span class="s1">&#39;util&#39;</span>
+        <span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">):</span>
+            <span class="c1"># Skip if it&#39;s a simple function (few lines)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">get_children</span><span class="p">()))</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">continue</span>
+                
+            <span class="c1"># Skip if it&#39;s a test or utility function</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">pattern</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">skip_patterns</span><span class="p">):</span>
+                <span class="k">continue</span>
+                
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">doc_node</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Const</span><span class="p">):</span>
+                <span class="c1"># Only warn for functions with parameters or return values</span>
+                <span class="k">if</span> <span class="n">func</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">args</span> <span class="ow">or</span> <span class="s1">&#39;return&#39;</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Missing docstring for function: </span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. &quot;</span>
+                        <span class="s2">&quot;Consider adding documentation for parameters and return values.&quot;</span><span class="p">,</span> 
+                        <span class="n">func</span><span class="p">,</span> <span class="n">file_path</span>
+                    <span class="p">)</span>
+        
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">ClassDef</span><span class="p">):</span>
+            <span class="c1"># Skip test classes</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">pattern</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">skip_patterns</span><span class="p">):</span>
+                <span class="k">continue</span>
+                
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">doc_node</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Const</span><span class="p">):</span>
+                <span class="c1"># Check if class has public methods</span>
+                <span class="n">has_public_methods</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+                    <span class="ow">not</span> <span class="n">method</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> 
+                    <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mymethods</span><span class="p">()</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">has_public_methods</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Missing docstring for class: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. &quot;</span>
+                        <span class="s2">&quot;Consider adding class-level documentation.&quot;</span><span class="p">,</span> 
+                        <span class="bp">cls</span><span class="p">,</span> <span class="n">file_path</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.generate_report">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.generate_report">[docs]</a>
+    <span class="k">def</span> <span class="nf">generate_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a human-readable report of all detected smells.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Formatted string containing the analysis report</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="s2">&quot;General ML Code Smell Report</span><span class="se">\n</span><span class="s2">============================</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="n">smell_counts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">smell</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">smell_counts</span><span class="p">:</span>
+                <span class="n">smell_counts</span><span class="p">[</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">smell_counts</span><span class="p">[</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. Smell: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   File: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;file_path&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            
+            <span class="c1"># Only show line number if it&#39;s not 0</span>
+            <span class="k">if</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;line_number&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   Line: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;line_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            
+            <span class="c1"># Only include code snippet if it&#39;s 3 lines or fewer</span>
+            <span class="n">code_lines</span> <span class="o">=</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;code_snippet&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">code_lines</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   Code Snippet:</span><span class="se">\n</span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;code_snippet&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="n">report</span> <span class="o">+=</span> <span class="s2">&quot;Smell Counts:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">smell</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">smell_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">smell</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total smells detected: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">report</span></div>
+
+
+<div class="viewcode-block" id="ML_SmellDetector.get_results">
+<a class="viewcode-back" href="../../../detectors/ml_detector.html#ml_code_smell_detector.ML_SmellDetector.get_results">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the analysis results in a structured format.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of dictionaries containing smell details and locations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;framework&#39;</span><span class="p">:</span> <span class="s1">&#39;General ML&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;fix&#39;</span><span class="p">:</span> <span class="s2">&quot;Not specified&quot;</span><span class="p">,</span>
+                <span class="s1">&#39;benefits&#39;</span><span class="p">:</span> <span class="s2">&quot;Not specified&quot;</span><span class="p">,</span>
+                <span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Line </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;line_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;line_number&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">smell</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">smells</span>
+        <span class="p">]</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Your Name.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hugging Face Smell Detector &mdash; ML Code Smell Detector 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=01f34227"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="General ML Smell Detector" href="ml_detector.html" />
+    <link rel="prev" title="Framework-Specific Smell Detector" href="framework_detector.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            ML Code Smell Detector
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Detectors</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="framework_detector.html">Framework-Specific Smell Detector</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Hugging Face Smell Detector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.detect_smells"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.detect_smells()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.is_framework_used"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.is_framework_used()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.visit_module"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.visit_module()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.add_smell"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.add_smell()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_model_versioning"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_model_versioning()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_tokenizer_caching"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_tokenizer_caching()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_model_caching"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_model_caching()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_deterministic_tokenization"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_deterministic_tokenization()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_efficient_data_loading"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_efficient_data_loading()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_distributed_training"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_distributed_training()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_mixed_precision_training"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_mixed_precision_training()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_gradient_accumulation"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_gradient_accumulation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_learning_rate_scheduling"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_learning_rate_scheduling()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_early_stopping"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_early_stopping()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.generate_report"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.generate_report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.get_results"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.get_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#source-code">Source Code</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ml_detector.html">General ML Smell Detector</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ML Code Smell Detector</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API Reference</a></li>
+      <li class="breadcrumb-item active">Hugging Face Smell Detector</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/detectors/huggingface_detector.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ml_code_smell_detector.detectors.huggingface_detector">
+<span id="hugging-face-smell-detector"></span><h1>Hugging Face Smell Detector<a class="headerlink" href="#module-ml_code_smell_detector.detectors.huggingface_detector" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ml_code_smell_detector.detectors.huggingface_detector.</span></span><span class="sig-name descname"><span class="pre">HuggingFaceSmellDetector</span></span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A detector class that identifies common code smells in Hugging Face Transformers code.</p>
+<p>This detector analyzes Python code that uses the Hugging Face Transformers library and identifies
+potential issues and best practices violations related to model training, data processing,
+and performance optimization.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.detect_smells">
+<span class="sig-name descname"><span class="pre">detect_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.detect_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.detect_smells" title="Link to this definition"></a></dt>
+<dd><p>Analyze a Python file for Hugging Face-related code smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the Python file to analyze.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of dictionaries containing detected code smells and their details.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.is_framework_used">
+<span class="sig-name descname"><span class="pre">is_framework_used</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">framework</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.is_framework_used"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.is_framework_used" title="Link to this definition"></a></dt>
+<dd><p>Check if a specific framework is imported in the module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>framework</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of the framework to check for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the framework is imported, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.visit_module">
+<span class="sig-name descname"><span class="pre">visit_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.visit_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.visit_module" title="Link to this definition"></a></dt>
+<dd><p>Visit a module node and run all smell detection checks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.add_smell">
+<span class="sig-name descname"><span class="pre">add_smell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">benefits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.add_smell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.add_smell" title="Link to this definition"></a></dt>
+<dd><p>Add a detected code smell to the results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smell</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Description of the code smell</p></li>
+<li><p><strong>fix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – How to fix the issue</p></li>
+<li><p><strong>benefits</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Benefits of fixing the issue</p></li>
+<li><p><strong>strategies</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Specific strategies to implement the fix</p></li>
+<li><p><strong>node</strong> (<em>NodeNG</em>) – AST node where the smell was detected</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file containing the smell</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_model_versioning">
+<span class="sig-name descname"><span class="pre">check_model_versioning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_model_versioning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_model_versioning" title="Link to this definition"></a></dt>
+<dd><p>Check if model versions are explicitly specified when loading pre-trained models.</p>
+<p>Detects cases where models are loaded without version tags, which could lead to
+reproducibility issues.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_tokenizer_caching">
+<span class="sig-name descname"><span class="pre">check_tokenizer_caching</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_tokenizer_caching"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_tokenizer_caching" title="Link to this definition"></a></dt>
+<dd><p>Check if tokenizer caching is enabled when loading tokenizers.</p>
+<p>Detects cases where tokenizers are loaded without caching configuration, which
+could lead to unnecessary re-downloads and slower loading times.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_model_caching">
+<span class="sig-name descname"><span class="pre">check_model_caching</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_model_caching"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_model_caching" title="Link to this definition"></a></dt>
+<dd><p>Check if model caching is enabled when loading models.</p>
+<p>Detects cases where models are loaded without caching configuration, which
+could lead to unnecessary re-downloads and slower loading times.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_deterministic_tokenization">
+<span class="sig-name descname"><span class="pre">check_deterministic_tokenization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_deterministic_tokenization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_deterministic_tokenization" title="Link to this definition"></a></dt>
+<dd><p>Check if tokenization parameters are explicitly specified.</p>
+<p>Detects cases where tokenization settings are not explicitly defined,
+which could lead to inconsistent preprocessing across runs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_efficient_data_loading">
+<span class="sig-name descname"><span class="pre">check_efficient_data_loading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_efficient_data_loading"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_efficient_data_loading" title="Link to this definition"></a></dt>
+<dd><p>Check if efficient data loading techniques are being used.</p>
+<p>Detects cases where standard data loading is used instead of optimized
+methods like datasets library or DataLoader.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_distributed_training">
+<span class="sig-name descname"><span class="pre">check_distributed_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_distributed_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_distributed_training" title="Link to this definition"></a></dt>
+<dd><p>Check if distributed training is configured when using training functionality.</p>
+<p>Detects cases where training code is present but distributed training
+settings are not configured.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_mixed_precision_training">
+<span class="sig-name descname"><span class="pre">check_mixed_precision_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_mixed_precision_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_mixed_precision_training" title="Link to this definition"></a></dt>
+<dd><p>Check if mixed precision training is enabled.</p>
+<p>Detects cases where training is performed without mixed precision settings,
+which could lead to suboptimal performance and memory usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_gradient_accumulation">
+<span class="sig-name descname"><span class="pre">check_gradient_accumulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_gradient_accumulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_gradient_accumulation" title="Link to this definition"></a></dt>
+<dd><p>Check if gradient accumulation is configured for training.</p>
+<p>Detects cases where training is performed without gradient accumulation,
+which could be beneficial for handling larger effective batch sizes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_learning_rate_scheduling">
+<span class="sig-name descname"><span class="pre">check_learning_rate_scheduling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_learning_rate_scheduling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_learning_rate_scheduling" title="Link to this definition"></a></dt>
+<dd><p>Check if learning rate scheduling is configured.</p>
+<p>Detects cases where training is performed without learning rate scheduling,
+which could lead to suboptimal training dynamics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_early_stopping">
+<span class="sig-name descname"><span class="pre">check_early_stopping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_early_stopping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.check_early_stopping" title="Link to this definition"></a></dt>
+<dd><p>Check if early stopping is implemented in training.</p>
+<p>Detects cases where training code is present but early stopping
+mechanisms are not configured, which could lead to overfitting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.generate_report">
+<span class="sig-name descname"><span class="pre">generate_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.generate_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.generate_report" title="Link to this definition"></a></dt>
+<dd><p>Generate a formatted report of all detected code smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A string containing the formatted report with all detected smells
+and their counts.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.get_results">
+<span class="sig-name descname"><span class="pre">get_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.get_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector.get_results" title="Link to this definition"></a></dt>
+<dd><p>Get the detected smells in a simplified format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of dictionaries containing smell details in a simplified format
+suitable for integration with other tools.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="source-code">
+<h2>Source Code<a class="headerlink" href="#source-code" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="framework_detector.html" class="btn btn-neutral float-left" title="Framework-Specific Smell Detector" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ml_detector.html" class="btn btn-neutral float-right" title="General ML Smell Detector" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Your Name.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

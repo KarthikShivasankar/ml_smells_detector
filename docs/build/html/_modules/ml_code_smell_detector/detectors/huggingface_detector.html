@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ml_code_smell_detector.detectors.huggingface_detector &mdash; ML Code Smell Detector 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ML Code Smell Detector
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detectors/index.html">Detectors</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ML Code Smell Detector</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ml_code_smell_detector.detectors.huggingface_detector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ml_code_smell_detector.detectors.huggingface_detector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">astroid</span>
+<span class="kn">from</span> <span class="nn">astroid</span> <span class="kn">import</span> <span class="n">nodes</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector">[docs]</a>
+<span class="k">class</span> <span class="nc">HuggingFaceSmellDetector</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A detector class that identifies common code smells in Hugging Face Transformers code.</span>
+<span class="sd">    </span>
+<span class="sd">    This detector analyzes Python code that uses the Hugging Face Transformers library and identifies</span>
+<span class="sd">    potential issues and best practices violations related to model training, data processing,</span>
+<span class="sd">    and performance optimization.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.detect_smells">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.detect_smells">[docs]</a>
+    <span class="k">def</span> <span class="nf">detect_smells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Analyze a Python file for Hugging Face-related code smells.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path: Path to the Python file to analyze.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of dictionaries containing detected code smells and their details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="n">astroid</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">module_name</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
+            
+            <span class="c1"># Check if &#39;transformers&#39; is imported</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_framework_used</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s1">&#39;transformers&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">visit_module</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping Hugging Face smell detection for </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: &#39;transformers&#39; not imported&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">astroid</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">AstroidSyntaxError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error parsing </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error while processing </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smells</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.is_framework_used">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.is_framework_used">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_framework_used</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">framework</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a specific framework is imported in the module.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            framework: Name of the framework to check for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the framework is imported, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">import_node</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">((</span><span class="n">nodes</span><span class="o">.</span><span class="n">Import</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">import_node</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Import</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">name</span> <span class="o">==</span> <span class="n">framework</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">import_node</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">import_node</span><span class="o">.</span><span class="n">modname</span> <span class="o">==</span> <span class="n">framework</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.visit_module">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.visit_module">[docs]</a>
+    <span class="k">def</span> <span class="nf">visit_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Visit a module node and run all smell detection checks.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_model_versioning</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_tokenizer_caching</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_model_caching</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_deterministic_tokenization</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_efficient_data_loading</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_distributed_training</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_mixed_precision_training</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_gradient_accumulation</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_learning_rate_scheduling</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_early_stopping</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.add_smell">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.add_smell">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_smell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smell</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">benefits</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategies</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">NodeNG</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a detected code smell to the results.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            smell: Description of the code smell</span>
+<span class="sd">            fix: How to fix the issue</span>
+<span class="sd">            benefits: Benefits of fixing the issue</span>
+<span class="sd">            strategies: Specific strategies to implement the fix</span>
+<span class="sd">            node: AST node where the smell was detected</span>
+<span class="sd">            file_path: Path to the file containing the smell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;smell&quot;</span><span class="p">:</span> <span class="n">smell</span><span class="p">,</span>
+            <span class="s2">&quot;how_to_fix&quot;</span><span class="p">:</span> <span class="n">fix</span><span class="p">,</span>
+            <span class="s2">&quot;benefits&quot;</span><span class="p">:</span> <span class="n">benefits</span><span class="p">,</span>
+            <span class="s2">&quot;strategies&quot;</span><span class="p">:</span> <span class="n">strategies</span><span class="p">,</span>
+            <span class="s2">&quot;line_number&quot;</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span>
+            <span class="s2">&quot;code_snippet&quot;</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">as_string</span><span class="p">(),</span>
+            <span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="n">file_path</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_model_versioning">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_model_versioning">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_model_versioning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if model versions are explicitly specified when loading pre-trained models.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where models are loaded without version tags, which could lead to</span>
+<span class="sd">        reproducibility issues.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;from_pretrained&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">and</span> 
+                <span class="p">(</span><span class="s1">&#39;AutoModel&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">or</span> 
+                 <span class="s1">&#39;PreTrainedModel&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">())):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">args</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Model versioning not specified&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Specify model version when loading pre-trained models&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Ensures consistency and reproducibility of results&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Use model_name_or_path@revision when loading models (e.g., bert-base-uncased@v1)&quot;</span><span class="p">,</span>
+                        <span class="n">call</span><span class="p">,</span>
+                        <span class="n">file_path</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_tokenizer_caching">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_tokenizer_caching">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_tokenizer_caching</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if tokenizer caching is enabled when loading tokenizers.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where tokenizers are loaded without caching configuration, which</span>
+<span class="sd">        could lead to unnecessary re-downloads and slower loading times.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;from_pretrained&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">and</span> 
+                <span class="p">(</span><span class="s1">&#39;AutoTokenizer&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">or</span> 
+                 <span class="s1">&#39;PreTrainedTokenizer&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">())):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cache_dir&#39;</span><span class="p">,</span> <span class="s1">&#39;local_files_only&#39;</span><span class="p">]</span> 
+                          <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Tokenizer caching not used&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Cache tokenizers to avoid re-downloading&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Reduces loading time and network dependency&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Use cache_dir parameter when loading tokenizers&quot;</span><span class="p">,</span>
+                        <span class="n">call</span><span class="p">,</span>
+                        <span class="n">file_path</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_model_caching">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_model_caching">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_model_caching</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if model caching is enabled when loading models.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where models are loaded without caching configuration, which</span>
+<span class="sd">        could lead to unnecessary re-downloads and slower loading times.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;from_pretrained&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">and</span> 
+                <span class="p">(</span><span class="s1">&#39;AutoModel&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">or</span> 
+                 <span class="s1">&#39;PreTrainedModel&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">())):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cache_dir&#39;</span><span class="p">,</span> <span class="s1">&#39;local_files_only&#39;</span><span class="p">]</span> 
+                          <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Model caching not used&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Cache models to avoid re-downloading&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Improves loading efficiency and reduces network dependency&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Use cache_dir parameter when loading models&quot;</span><span class="p">,</span>
+                        <span class="n">call</span><span class="p">,</span>
+                        <span class="n">file_path</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_deterministic_tokenization">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_deterministic_tokenization">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_deterministic_tokenization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if tokenization parameters are explicitly specified.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where tokenization settings are not explicitly defined,</span>
+<span class="sd">        which could lead to inconsistent preprocessing across runs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;from_pretrained&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">and</span> 
+                <span class="p">(</span><span class="s1">&#39;AutoTokenizer&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">or</span> 
+                 <span class="s1">&#39;PreTrainedTokenizer&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">())):</span>
+                <span class="n">deterministic_params</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s1">&#39;do_lower_case&#39;</span><span class="p">,</span> <span class="s1">&#39;strip_accents&#39;</span><span class="p">,</span> <span class="s1">&#39;truncation&#39;</span><span class="p">,</span> 
+                    <span class="s1">&#39;padding&#39;</span><span class="p">,</span> <span class="s1">&#39;max_length&#39;</span><span class="p">,</span> <span class="s1">&#39;return_tensors&#39;</span>
+                <span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="ow">in</span> <span class="n">deterministic_params</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Deterministic tokenization settings not specified&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Use consistent tokenization settings&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Ensures reproducible pre-processing and consistent model inputs&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Set tokenization parameters explicitly when loading tokenizers&quot;</span><span class="p">,</span>
+                        <span class="n">call</span><span class="p">,</span>
+                        <span class="n">file_path</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_efficient_data_loading">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_efficient_data_loading">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_efficient_data_loading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if efficient data loading techniques are being used.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where standard data loading is used instead of optimized</span>
+<span class="sd">        methods like datasets library or DataLoader.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">datasets_imported</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> 
+                              <span class="k">for</span> <span class="n">import_node</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">))</span>
+        
+        <span class="n">efficient_patterns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;load_dataset&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Dataset.from_&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;DataLoader&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;IterableDataset&#39;</span>
+        <span class="p">]</span>
+        
+        <span class="n">has_efficient_loading</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">pattern</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">efficient_patterns</span>
+        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">datasets_imported</span> <span class="ow">or</span> <span class="n">has_efficient_loading</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Efficient data loading not detected&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use efficient data loading techniques&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Enhances data processing speed and model training efficiency&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use datasets library for loading and processing data&quot;</span><span class="p">,</span>
+                <span class="n">node</span><span class="p">,</span>
+                <span class="n">file_path</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_distributed_training">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_distributed_training">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_distributed_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if distributed training is configured when using training functionality.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where training code is present but distributed training</span>
+<span class="sd">        settings are not configured.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if training-related imports exist</span>
+        <span class="n">has_training_imports</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="s1">&#39;Trainer&#39;</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="s1">&#39;TrainingArguments&#39;</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">import_node</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_training_imports</span><span class="p">:</span>
+            <span class="k">return</span>  <span class="c1"># Skip if no training-related imports</span>
+
+        <span class="n">distributed_config</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;local_rank&#39;</span><span class="p">,</span> <span class="s1">&#39;n_gpu&#39;</span><span class="p">,</span> <span class="s1">&#39;distributed_training&#39;</span><span class="p">,</span> <span class="s1">&#39;tpu_num_cores&#39;</span><span class="p">]</span> 
+                      <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">distributed_config</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        
+        <span class="c1"># Only report if TrainingArguments is used but without distributed config</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">distributed_config</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_training_arguments</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Distributed training not configured&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Utilize distributed training capabilities&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Speeds up training and leverages multiple GPUs/TPUs&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Configure Trainer with distributed settings using local_rank, n_gpu, or tpu_num_cores&quot;</span><span class="p">,</span>
+                <span class="n">node</span><span class="p">,</span>
+                <span class="n">file_path</span>
+            <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_has_training_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method to check if TrainingArguments is actually used in the code&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> 
+            <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span>
+            <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">)</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_mixed_precision_training">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_mixed_precision_training">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_mixed_precision_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if mixed precision training is enabled.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where training is performed without mixed precision settings,</span>
+<span class="sd">        which could lead to suboptimal performance and memory usage.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_training_arguments</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="k">return</span>  <span class="c1"># Skip if no TrainingArguments used</span>
+
+        <span class="n">fp16_used</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">((</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;fp16&#39;</span> <span class="ow">and</span> <span class="n">keyword</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="ow">or</span>
+                      <span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;bf16&#39;</span> <span class="ow">and</span> <span class="n">keyword</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="ow">or</span>
+                      <span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;half_precision_backend&#39;</span>
+                      <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">fp16_used</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fp16_used</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Mixed precision training not enabled&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use mixed precision training to improve performance&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Accelerates training and reduces memory usage&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Enable mixed precision training using fp16=True or bf16=True in TrainingArguments&quot;</span><span class="p">,</span>
+                <span class="n">node</span><span class="p">,</span>
+                <span class="n">file_path</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_gradient_accumulation">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_gradient_accumulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if gradient accumulation is configured for training.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where training is performed without gradient accumulation,</span>
+<span class="sd">        which could be beneficial for handling larger effective batch sizes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Skip if no TrainingArguments used</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_training_arguments</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">gradient_accumulation</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;gradient_accumulation_steps&#39;</span> <span class="ow">and</span> <span class="n">keyword</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">1</span> 
+                      <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">gradient_accumulation</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        
+        <span class="c1"># Only report if training configuration is present but gradient accumulation isn&#39;t</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gradient_accumulation</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_training_code</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Gradient accumulation not configured&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Implement gradient accumulation for large batch sizes&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Allows training with larger effective batch sizes and improves convergence&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Set gradient_accumulation_steps in Trainer configuration&quot;</span><span class="p">,</span>
+                <span class="n">node</span><span class="p">,</span>
+                <span class="n">file_path</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_learning_rate_scheduling">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_learning_rate_scheduling">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_learning_rate_scheduling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if learning rate scheduling is configured.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where training is performed without learning rate scheduling,</span>
+<span class="sd">        which could lead to suboptimal training dynamics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Skip if no TrainingArguments used</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_training_arguments</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">lr_scheduler_used</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;learning_rate_scheduler&#39;</span><span class="p">,</span> <span class="s1">&#39;lr_scheduler_type&#39;</span><span class="p">]</span> 
+                      <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">lr_scheduler_used</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        
+        <span class="c1"># Only report if training configuration is present but lr scheduler isn&#39;t</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lr_scheduler_used</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_training_code</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Learning rate scheduler not detected&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use learning rate schedulers to dynamically adjust learning rate&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Optimizes training process and enhances model performance&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Configure lr_scheduler_type in TrainingArguments or use transformers built-in schedulers&quot;</span><span class="p">,</span>
+                <span class="n">node</span><span class="p">,</span>
+                <span class="n">file_path</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_early_stopping">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_early_stopping">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_early_stopping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if early stopping is implemented in training.</span>
+<span class="sd">        </span>
+<span class="sd">        Detects cases where training code is present but early stopping</span>
+<span class="sd">        mechanisms are not configured, which could lead to overfitting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: AST node representing the module</span>
+<span class="sd">            file_path: Path to the file being analyzed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Skip if no training-related code is present</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_training_code</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">early_stopping_used</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;EarlyStoppingCallback&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                <span class="n">early_stopping_used</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            
+        <span class="c1"># Also check TrainingArguments for early_stopping_* parameters</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;early_stopping_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">early_stopping_used</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">early_stopping_used</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Early stopping not implemented&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Implement early stopping to avoid overfitting&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Prevents overfitting and reduces unnecessary training time&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use EarlyStoppingCallback or configure early_stopping parameters in TrainingArguments&quot;</span><span class="p">,</span>
+                <span class="n">node</span><span class="p">,</span>
+                <span class="n">file_path</span>
+            <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_has_training_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method to check if the code contains training-related elements&quot;&quot;&quot;</span>
+        <span class="n">training_indicators</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;Trainer&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;.train(&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;optimizer&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;train_dataset&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;eval_dataset&#39;</span>
+        <span class="p">]</span>
+        
+        <span class="c1"># Check imports</span>
+        <span class="n">has_training_imports</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="nb">any</span><span class="p">(</span><span class="n">indicator</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">import_node</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">((</span><span class="n">nodes</span><span class="o">.</span><span class="n">Import</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">training_indicators</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Check function calls and assignments</span>
+        <span class="n">has_training_usage</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="nb">any</span><span class="p">(</span><span class="n">indicator</span> <span class="ow">in</span> <span class="n">node_item</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> 
+                <span class="k">for</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">training_indicators</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">node_item</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">((</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">,</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">has_training_imports</span> <span class="ow">or</span> <span class="n">has_training_usage</span>
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.generate_report">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.generate_report">[docs]</a>
+    <span class="k">def</span> <span class="nf">generate_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a formatted report of all detected code smells.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A string containing the formatted report with all detected smells</span>
+<span class="sd">            and their counts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="s2">&quot;Hugging Face Code Smell Report</span><span class="se">\n</span><span class="s2">==============================</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="n">smell_counts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">smell</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">smell_counts</span><span class="p">:</span>
+                <span class="n">smell_counts</span><span class="p">[</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">smell_counts</span><span class="p">[</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. Smell: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   File: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;file_path&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            
+            <span class="c1"># Only show line number if it&#39;s not 0</span>
+            <span class="k">if</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;line_number&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   Line: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;line_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            
+            <span class="c1"># Only include code snippet if it&#39;s 3 lines or fewer</span>
+            <span class="n">code_lines</span> <span class="o">=</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;code_snippet&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">code_lines</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   Code Snippet:</span><span class="se">\n</span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;code_snippet&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   How to Fix: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;how_to_fix&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   Benefits: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;benefits&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   Strategies: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;strategies&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+
+        <span class="n">report</span> <span class="o">+=</span> <span class="s2">&quot;Smell Counts:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">smell</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">smell_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">smell</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total smells detected: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">report</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.get_results">
+<a class="viewcode-back" href="../../../detectors/huggingface_detector.html#ml_code_smell_detector.HuggingFaceSmellDetector.get_results">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the detected smells in a simplified format.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of dictionaries containing smell details in a simplified format</span>
+<span class="sd">            suitable for integration with other tools.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;framework&#39;</span><span class="p">:</span> <span class="s1">&#39;Hugging Face&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;fix&#39;</span><span class="p">:</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;how_to_fix&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;benefits&#39;</span><span class="p">:</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;benefits&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Line </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;line_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">smell</span><span class="p">[</span><span class="s1">&#39;line_number&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">smell</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">smells</span>
+        <span class="p">]</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Your Name.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
