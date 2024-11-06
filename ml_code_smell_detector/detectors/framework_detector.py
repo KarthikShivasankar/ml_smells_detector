@@ -370,11 +370,34 @@ class FrameworkSpecificSmellDetector:
                     self.add_smell('NumPy', 'Broadcasting Risk', binop, file_path)
 
     def detect_copy_view_issues(self, node: nodes.Module, file_path: str):
-        """Detect potential copy/view confusion"""
+        """Detect potential copy/view confusion in NumPy array operations"""
         for assign in node.nodes_of_class(nodes.Assign):
+            # Only check assignments involving array slicing
             if isinstance(assign.value, nodes.Subscript):
-                # Check for array slicing without explicit copy
-                if not any(method in assign.parent.as_string() for method in ['.copy()', 'np.copy']):
+                # Skip if it's not a NumPy array operation
+                if not any(np_indicator in assign.as_string() 
+                         for np_indicator in ['np.', 'numpy.']):
+                    continue
+                
+                # Check if the slice is being modified later
+                is_modified = False
+                parent = assign.parent
+                while parent and not isinstance(parent, nodes.Module):
+                    if isinstance(parent, (nodes.Assign, nodes.AugAssign)):
+                        # Look for modifications to the assigned variable
+                        target_name = assign.targets[0].as_string()
+                        if target_name in parent.as_string():
+                            is_modified = True
+                            break
+                    parent = parent.parent
+                
+                # Only flag if:
+                # 1. The slice is modified later
+                # 2. No explicit copy is made
+                # 3. Not using advanced indexing (which creates copies)
+                if (is_modified and 
+                    not any(method in assign.as_string() for method in ['.copy()', 'np.copy']) and
+                    not any(idx in assign.value.as_string() for idx in ['[[', 'bool', 'mask'])):
                     self.add_smell('NumPy', 'Copy-View Confusion', assign, file_path)
 
     def detect_axis_specification(self, node: nodes.Module, file_path: str):

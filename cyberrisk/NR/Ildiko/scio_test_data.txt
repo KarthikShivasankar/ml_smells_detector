@@ -1,0 +1,7 @@
+QuoIntelligence followed the massive ransomware attacks targeting VMware ESXi servers worldwide by exploiting the two-year-old vulnerability CVE-2021-21974. While such servers should not be publicly exposed and should be patched by now, we observed how the attackers continue to exploit old vulnerabilities resulting in successful attacks.
+
+In July and early August 2022, Volexity worked on multiple incidents where the victim organization experienced serious breaches to their Zimbra Collaboration Suite (ZCS) email servers. Volexity\u2019s investigations uncovered evidence indicating the likely cause of these breaches was exploitation of CVE-2022-27925, a remote-code-execution (RCE) vulnerability in ZCS. This initial CVE was patched by Zimbra in March 2022 in 8.8.15P31 and 9.0.0P24.
+
+SentinelLabs observed a cluster of virtualized .NET malware loaders distributed through malvertising attacks.\nThe loaders, dubbed MalVirt, use obfuscated virtualization for anti-analysis and evasion along with the Windows Process Explorer driver for terminating processes. MalVirt loaders are currently distributing malware of the Formbook family as part of an ongoing campaign. To disguise real C2 traffic and evade network detections, the malware beacons to random decoy C2 servers hosted at different hosting providers, including Azure, Tucows, Choopa, and Namecheap.
+
+
