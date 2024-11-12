@@ -33,9 +33,6 @@ pip install -e .
 ml_smell_detector analyze --path <path_to_code>
 ```
 
-```bash
-ml_smell_detector analyze test_all.py
-```
 
 ## Detailed Feature List
 

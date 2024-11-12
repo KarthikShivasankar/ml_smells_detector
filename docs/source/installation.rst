@@ -5,14 +5,14 @@ You can install the ML Code Smell Detector using pip:
 
 .. code-block:: bash
 
-   pip install ml-code-smell-detector
+   pip install -e .
 
 For development purposes, clone the repository and install in editable mode:
 
 .. code-block:: bash
 
-   git clone https://github.com/yourusername/ml_code_smell_detector.git
-   cd ml_code_smell_detector
+   Download the repository
+   cd "the repository's directory"
    pip install -e .
 
 Dependencies

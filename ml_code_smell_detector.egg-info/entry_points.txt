@@ -1,2 +1,0 @@
-[console_scripts]
-ml_smell_detector = ml_code_smell_detector.cli:main
