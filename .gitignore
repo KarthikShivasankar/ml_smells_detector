@@ -27,5 +27,5 @@ pseudohnn/
 Analysis/
 
 
-
+*.egg-info/
 
