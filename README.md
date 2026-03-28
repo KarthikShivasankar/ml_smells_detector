@@ -1,4 +1,4 @@
-# ML Code Smell Detector
+# ML Code Smell Detector (ml_smells_detector)
 
 ML Code Smell Detector is a Python package that helps identify potential issues and bad practices in machine learning code. It includes detectors for framework-specific smells, Hugging Face-related smells, and general machine learning smells.
 
