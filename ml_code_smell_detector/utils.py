@@ -6,6 +6,7 @@ def ensure_directory_exists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+
 def create_sample_file(filename, content):
     """
     Create a sample file with the given filename and content.
@@ -16,6 +17,7 @@ def create_sample_file(filename, content):
     """
     with open(filename, 'w') as f:
         f.write(content)
+
 
 def get_file_extension(filename):
     """
@@ -29,6 +31,7 @@ def get_file_extension(filename):
     """
     return os.path.splitext(filename)[1][1:]
 
+
 def is_python_file(filename):
     """
     Check if a file is a Python file based on its extension.
@@ -40,6 +43,7 @@ def is_python_file(filename):
     bool: True if the file is a Python file, False otherwise.
     """
     return get_file_extension(filename).lower() == 'py'
+
 
 def count_lines(filename):
     """
@@ -53,6 +57,7 @@ def count_lines(filename):
     """
     with open(filename, 'r') as f:
         return sum(1 for _ in f)
+
 
 def get_imported_modules(node):
     """
@@ -72,6 +77,7 @@ def get_imported_modules(node):
             imported_modules.append(import_node.modname)
     return imported_modules
 
+
 def get_function_names(node):
     """
     Get a list of function names defined in an AST node.
@@ -83,6 +89,7 @@ def get_function_names(node):
     list: A list of function names defined in the node.
     """
     return [func.name for func in node.nodes_of_class(astroid.FunctionDef)]
+
 
 def get_class_names(node):
     """
@@ -96,6 +103,7 @@ def get_class_names(node):
     """
     return [cls.name for cls in node.nodes_of_class(astroid.ClassDef)]
 
+
 def get_variable_names(node):
     """
     Get a list of variable names defined in an AST node.
@@ -106,7 +114,12 @@ def get_variable_names(node):
     Returns:
     list: A list of variable names defined in the node.
     """
-    return [assign.targets[0].name for assign in node.nodes_of_class(astroid.Assign) if isinstance(assign.targets[0], astroid.AssignName)]
+    return [
+        assign.targets[0].name for assign in node.nodes_of_class(
+            astroid.Assign) if isinstance(
+            assign.targets[0],
+            astroid.AssignName)]
+
 
 def get_call_names(node):
     """
@@ -120,6 +133,7 @@ def get_call_names(node):
     """
     return [call.func.as_string() for call in node.nodes_of_class(astroid.Call)]
 
+
 def get_attribute_names(node):
     """
     Get a list of attribute names accessed in an AST node.
@@ -131,6 +145,7 @@ def get_attribute_names(node):
     list: A list of attribute names accessed in the node.
     """
     return [attr.attrname for attr in node.nodes_of_class(astroid.Attribute)]
+
 
 def get_constant_values(node):
     """
