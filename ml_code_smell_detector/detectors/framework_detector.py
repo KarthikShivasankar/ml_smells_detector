@@ -2,6 +2,7 @@ import astroid
 from astroid import nodes
 from typing import List, Dict, Any
 import sys
+import os
 
 
 class FrameworkSpecificSmellDetector:
@@ -36,7 +37,8 @@ class FrameworkSpecificSmellDetector:
         try:
             with open(file_path, 'r') as file:
                 content = file.read()
-            module = astroid.parse(content, module_name=file_path)
+            module_name = os.path.splitext(os.path.basename(file_path))[0]
+            module = astroid.parse(content, module_name=module_name)
 
             if not module:
                 print(f"Error: Could not parse module for {file_path}", file=sys.stderr)
