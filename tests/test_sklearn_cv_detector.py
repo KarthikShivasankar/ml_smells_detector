@@ -1,5 +1,8 @@
+import os
 from ml_code_smell_detector.detectors.framework_detector import FrameworkSpecificSmellDetector
 import astroid
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class CrossValidationDetector:
@@ -30,14 +33,14 @@ class CrossValidationDetector:
 
 def test_missing_cross_validation_sample1():
     detector = CrossValidationDetector()
-    smells = detector.detect_smells("evaluation/cross_validation/sample1.py")
+    smells = detector.detect_smells(os.path.join(PROJECT_ROOT, "tests/fixtures/cross_validation/sample1.py"))
     assert len(smells) > 0, "Should detect missing cross-validation in sample1"
     print_smell_details(smells)
 
 
 def test_missing_cross_validation_sample2():
     detector = CrossValidationDetector()
-    smells = detector.detect_smells("evaluation/cross_validation/sample2.py")
+    smells = detector.detect_smells(os.path.join(PROJECT_ROOT, "tests/fixtures/cross_validation/sample2.py"))
     assert len(smells) > 0, "Should detect missing cross-validation in sample2"
     print_smell_details(smells)
 
@@ -45,8 +48,8 @@ def test_missing_cross_validation_sample2():
 def test_all_cv_files():
     detector = CrossValidationDetector()
     test_files = [
-        "evaluation/cross_validation/sample1.py",
-        "evaluation/cross_validation/sample2.py"
+        os.path.join(PROJECT_ROOT, "tests/fixtures/cross_validation/sample1.py"),
+        os.path.join(PROJECT_ROOT, "tests/fixtures/cross_validation/sample2.py"),
     ]
 
     all_smells = []

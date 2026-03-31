@@ -9,6 +9,6 @@ General ML Smell Detector
 Source Code
 -----------
 
-.. literalinclude:: ../../ml_code_smell_detector/detectors/ml_detector.py
+.. literalinclude:: ../../../ml_code_smell_detector/detectors/ml_detector.py
    :language: python
    :linenos:

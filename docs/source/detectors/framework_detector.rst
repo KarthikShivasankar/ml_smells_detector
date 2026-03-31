@@ -9,6 +9,6 @@ Framework-Specific Smell Detector
 Source Code
 -----------
 
-.. literalinclude:: ../../ml_code_smell_detector/detectors/framework_detector.py
+.. literalinclude:: ../../../ml_code_smell_detector/detectors/framework_detector.py
    :language: python
    :linenos:

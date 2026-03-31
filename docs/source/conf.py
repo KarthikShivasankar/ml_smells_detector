@@ -1,10 +1,10 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 project = 'ML Code Smell Detector'
-copyright = '2023, Your Name'
-author = 'Your Name'
+copyright = '2024, Karthik Shivashankar'
+author = 'Karthik Shivashankar'
 release = '0.1.0'
 
 extensions = [
@@ -26,9 +26,6 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None),
     'pandas': ('https://pandas.pydata.org/docs/', None),
     'sklearn': ('https://scikit-learn.org/stable/', None),
-    'tensorflow': ('https://www.tensorflow.org/api_docs/python', None),
-    'torch': ('https://pytorch.org/docs/stable/', None),
-    'transformers': ('https://huggingface.co/transformers/', None),
 }
 
 autodoc_member_order = 'bysource'
