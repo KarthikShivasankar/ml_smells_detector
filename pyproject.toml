@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ml-code-smell-detector"
-version = "0.1.0"
+version = "0.1.1"
 description = "A package to detect code smells in machine learning code"
 readme = "README.md"
 requires-python = ">=3.9"
