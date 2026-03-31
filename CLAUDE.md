@@ -30,10 +30,7 @@ uv run pytest tests/test_sklearn_cv_detector.py::TestCrossValidationDetector::te
 
 ### Build documentation
 ```bash
-# Windows:
-rebuild_docs.bat
-# Manual:
-cd docs && sphinx-build -b html source build
+cd docs && uv run sphinx-build -b html source build
 ```
 
 ## Architecture
@@ -64,7 +61,7 @@ AST helper functions built on `astroid`: extracting imports, function/class/vari
 
 - Package metadata: `pyproject.toml` (build backend: hatchling)
 - Runtime dependencies: `astroid`, `tqdm` (the tool itself does not require ML frameworks installed)
-- Dev dependencies: `pytest`, `pytest-cov`, `flake8` — install with `uv pip install -e ".[dev]"`
+- Dev dependencies: `pytest`, `pytest-cov`, `flake8`, `sphinx`, `sphinx-rtd-theme`, `sphinx-autodoc-typehints`, `myst-parser` — install with `uv pip install -e ".[dev]"`
 - Build: `uv build` → `dist/`
 - Publish: `uv publish --token pypi-<token>`
 
