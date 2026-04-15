@@ -30,7 +30,7 @@ pip install -e .
 ## Usage
 
 ```bash
-ml_smell_detector analyze --path <path_to_code>
+ml_smell_detector analyze  <path_to_code>
 ```
 
 
