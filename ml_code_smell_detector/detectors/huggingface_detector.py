@@ -2,6 +2,7 @@ import astroid
 from astroid import nodes
 from typing import List, Dict, Any
 import sys
+import os
 
 
 class HuggingFaceSmellDetector:
@@ -27,7 +28,8 @@ class HuggingFaceSmellDetector:
         try:
             with open(file_path, 'r') as file:
                 content = file.read()
-            module = astroid.parse(content, module_name=file_path)
+            module_name = os.path.splitext(os.path.basename(file_path))[0]
+            module = astroid.parse(content, module_name=module_name)
 
             # Check if 'transformers' is imported
             if self.is_framework_used(module, 'transformers'):

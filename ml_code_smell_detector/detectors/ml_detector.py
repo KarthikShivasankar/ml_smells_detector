@@ -2,6 +2,7 @@ import astroid
 from astroid import nodes
 from typing import List, Dict, Any
 import sys
+import os
 
 
 class ML_SmellDetector:
@@ -47,7 +48,8 @@ class ML_SmellDetector:
         try:
             with open(file_path, 'r') as file:
                 content = file.read()
-            module = astroid.parse(content, module_name=file_path)
+            module_name = os.path.splitext(os.path.basename(file_path))[0]
+            module = astroid.parse(content, module_name=module_name)
 
             # Check if any ML-related packages are imported
             ml_packages = ['pandas', 'numpy', 'sklearn', 'tensorflow', 'torch', 'transformers']
