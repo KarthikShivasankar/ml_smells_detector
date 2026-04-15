@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ml_code_smell_detector.detectors.huggingface_detector &mdash; ML Code Smell Detector 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ML Code Smell Detector
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ML Code Smell Detector</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ml_code_smell_detector.detectors.huggingface_detector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ml_code_smell_detector.detectors.huggingface_detector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">astroid</span>
+<span class="kn">from</span> <span class="nn">astroid</span> <span class="kn">import</span> <span class="n">nodes</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector">[docs]</a>
+<span class="k">class</span> <span class="nc">HuggingFaceSmellDetector</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.detect_smells">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.detect_smells">[docs]</a>
+    <span class="k">def</span> <span class="nf">detect_smells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">module</span> <span class="o">=</span> <span class="n">astroid</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visit_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smells</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.visit_module">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.visit_module">[docs]</a>
+    <span class="k">def</span> <span class="nf">visit_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_model_versioning</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_tokenizer_caching</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_model_caching</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_deterministic_tokenization</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_efficient_data_loading</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_distributed_training</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_mixed_precision_training</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_gradient_accumulation</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_learning_rate_scheduling</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_early_stopping</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.add_smell">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.add_smell">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_smell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smell</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">benefits</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategies</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;smell&quot;</span><span class="p">:</span> <span class="n">smell</span><span class="p">,</span>
+            <span class="s2">&quot;how_to_fix&quot;</span><span class="p">:</span> <span class="n">fix</span><span class="p">,</span>
+            <span class="s2">&quot;benefits&quot;</span><span class="p">:</span> <span class="n">benefits</span><span class="p">,</span>
+            <span class="s2">&quot;strategies&quot;</span><span class="p">:</span> <span class="n">strategies</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_model_versioning">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_model_versioning">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_model_versioning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;from_pretrained&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">args</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Model versioning not specified&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Specify model version when loading pre-trained models&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Ensures consistency and reproducibility of results&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Use model_name_or_path@revision when loading models (e.g., bert-base-uncased@v1)&quot;</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_tokenizer_caching">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_tokenizer_caching">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_tokenizer_caching</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;from_pretrained&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;Tokenizer&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="s1">&#39;cache_dir&#39;</span> <span class="ow">in</span> <span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Tokenizer caching not used&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Cache tokenizers to avoid re-downloading&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Reduces loading time and network dependency&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Use cache_dir parameter when loading tokenizers&quot;</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_model_caching">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_model_caching">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_model_caching</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;from_pretrained&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;Model&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="s1">&#39;cache_dir&#39;</span> <span class="ow">in</span> <span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Model caching not used&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Cache models to avoid re-downloading&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Improves loading efficiency and reduces network dependency&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Use cache_dir parameter when loading models&quot;</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_deterministic_tokenization">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_deterministic_tokenization">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_deterministic_tokenization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;from_pretrained&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;Tokenizer&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;do_lower_case&#39;</span><span class="p">,</span> <span class="s1">&#39;strip_accents&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                        <span class="s2">&quot;Deterministic tokenization settings not specified&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Use consistent tokenization settings&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Ensures reproducible pre-processing and consistent model inputs&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Set tokenization parameters explicitly when loading tokenizers&quot;</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_efficient_data_loading">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_efficient_data_loading">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_efficient_data_loading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="n">datasets_used</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span> <span class="ow">in</span> <span class="n">import_node</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">import_node</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">datasets_used</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Efficient data loading not detected&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use efficient data loading techniques&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Enhances data processing speed and model training efficiency&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use datasets library for loading and processing data&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_distributed_training">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_distributed_training">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_distributed_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="n">distributed_config</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;distributed&#39;</span><span class="p">,</span> <span class="s1">&#39;tpu&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">distributed_config</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">distributed_config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Distributed training not configured&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Utilize distributed training capabilities&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Speeds up training and leverages multiple GPUs/TPUs&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Configure Trainer for distributed training using distributed or TPU settings&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_mixed_precision_training">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_mixed_precision_training">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_mixed_precision_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="n">fp16_used</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;fp16&#39;</span> <span class="ow">and</span> <span class="n">keyword</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">fp16_used</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fp16_used</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Mixed precision training not enabled&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use mixed precision training to improve performance&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Accelerates training and reduces memory usage&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Enable mixed precision training using fp16 parameter in Trainer&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_gradient_accumulation">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_gradient_accumulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="n">gradient_accumulation</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;gradient_accumulation_steps&#39;</span> <span class="ow">and</span> <span class="n">keyword</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">gradient_accumulation</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gradient_accumulation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Gradient accumulation not configured&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Implement gradient accumulation for large batch sizes&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Allows training with larger effective batch sizes and improves convergence&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Set gradient_accumulation_steps in Trainer configuration&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_learning_rate_scheduling">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_learning_rate_scheduling">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_learning_rate_scheduling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="n">lr_scheduler_used</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">assign</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Assign</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">assign</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TrainingArguments&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;learning_rate_scheduler&#39;</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">assign</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keywords</span><span class="p">):</span>
+                    <span class="n">lr_scheduler_used</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lr_scheduler_used</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Learning rate scheduler not detected&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use learning rate schedulers to dynamically adjust learning rate&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Optimizes training process and enhances model performance&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Configure learning_rate_scheduler in Trainer or use transformers built-in schedulers&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.check_early_stopping">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.check_early_stopping">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_early_stopping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">nodes</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="n">early_stopping_used</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">nodes_of_class</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;EarlyStoppingCallback&#39;</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">as_string</span><span class="p">():</span>
+                <span class="n">early_stopping_used</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">early_stopping_used</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_smell</span><span class="p">(</span>
+                <span class="s2">&quot;Early stopping not implemented&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Implement early stopping to avoid overfitting&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Prevents overfitting and reduces unnecessary training time&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Use EarlyStoppingCallback in Trainer configuration&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HuggingFaceSmellDetector.generate_report">
+<a class="viewcode-back" href="../../../api.html#ml_code_smell_detector.HuggingFaceSmellDetector.generate_report">[docs]</a>
+    <span class="k">def</span> <span class="nf">generate_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="s2">&quot;Hugging Face Code Smell Report</span><span class="se">\n</span><span class="s2">==============================</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">smell</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. Smell: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;smell&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   How to Fix: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;how_to_fix&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   Benefits: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;benefits&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;   Strategies: </span><span class="si">{</span><span class="n">smell</span><span class="p">[</span><span class="s1">&#39;strategies&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;Total smells detected: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smells</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">report</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Your Name.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
