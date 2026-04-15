@@ -9,6 +9,6 @@ Hugging Face Smell Detector
 Source Code
 -----------
 
-.. literalinclude:: ../../ml_code_smell_detector/detectors/huggingface_detector.py
+.. literalinclude:: ../../../ml_code_smell_detector/detectors/huggingface_detector.py
    :language: python
    :linenos:
