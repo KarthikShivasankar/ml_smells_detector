@@ -18,12 +18,13 @@ setup(
             'ml_smell_detector=ml_code_smell_detector.cli:main',
         ],
     },
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Karthik Shivashankar",
+    author_email="karthik13sankar@outlook.com",
+
     description="A package to detect code smells in machine learning code",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/ml_code_smell_detector",
+    url="https://github.com/KarthikShivasankar/ml_code_smell_detector",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
