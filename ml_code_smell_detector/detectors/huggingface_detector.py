@@ -3,9 +3,10 @@ from astroid import nodes
 from typing import List, Dict, Any
 import sys
 
+
 class HuggingFaceSmellDetector:
     """A detector class that identifies common code smells in Hugging Face Transformers code.
-    
+
     This detector analyzes Python code that uses the Hugging Face Transformers library and identifies
     potential issues and best practices violations related to model training, data processing,
     and performance optimization.
@@ -27,12 +28,14 @@ class HuggingFaceSmellDetector:
             with open(file_path, 'r') as file:
                 content = file.read()
             module = astroid.parse(content, module_name=file_path)
-            
+
             # Check if 'transformers' is imported
             if self.is_framework_used(module, 'transformers'):
                 self.visit_module(module, file_path)
             else:
-                print(f"Skipping Hugging Face smell detection for {file_path}: 'transformers' not imported", file=sys.stderr)
+                print(
+                    f"Skipping Hugging Face smell detection for {file_path}: 'transformers' not imported",
+                    file=sys.stderr)
         except astroid.exceptions.AstroidSyntaxError as e:
             print(f"Error parsing {file_path}: {str(e)}", file=sys.stderr)
         except Exception as e:
@@ -51,10 +54,10 @@ class HuggingFaceSmellDetector:
         """
         for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
             if isinstance(import_node, nodes.Import):
-                if any(name == framework for name, _ in import_node.names):
+                if any(name.split('.')[0] == framework for name, _ in import_node.names):
                     return True
             elif isinstance(import_node, nodes.ImportFrom):
-                if import_node.modname == framework:
+                if import_node.modname.split('.')[0] == framework:
                     return True
         return False
 
@@ -99,7 +102,7 @@ class HuggingFaceSmellDetector:
 
     def check_model_versioning(self, node: nodes.Module, file_path: str):
         """Check if model versions are explicitly specified when loading pre-trained models.
-        
+
         Detects cases where models are loaded without version tags, which could lead to
         reproducibility issues.
 
@@ -108,8 +111,8 @@ class HuggingFaceSmellDetector:
             file_path: Path to the file being analyzed
         """
         for call in node.nodes_of_class(nodes.Call):
-            if ('from_pretrained' in call.func.as_string() and 
-                ('AutoModel' in call.func.as_string() or 
+            if ('from_pretrained' in call.func.as_string() and
+                ('AutoModel' in call.func.as_string() or
                  'PreTrainedModel' in call.func.as_string())):
                 if not any('@' in arg.as_string() for arg in call.args):
                     self.add_smell(
@@ -123,7 +126,7 @@ class HuggingFaceSmellDetector:
 
     def check_tokenizer_caching(self, node: nodes.Module, file_path: str):
         """Check if tokenizer caching is enabled when loading tokenizers.
-        
+
         Detects cases where tokenizers are loaded without caching configuration, which
         could lead to unnecessary re-downloads and slower loading times.
 
@@ -132,11 +135,11 @@ class HuggingFaceSmellDetector:
             file_path: Path to the file being analyzed
         """
         for call in node.nodes_of_class(nodes.Call):
-            if ('from_pretrained' in call.func.as_string() and 
-                ('AutoTokenizer' in call.func.as_string() or 
+            if ('from_pretrained' in call.func.as_string() and
+                ('AutoTokenizer' in call.func.as_string() or
                  'PreTrainedTokenizer' in call.func.as_string())):
-                if not any(keyword.arg in ['cache_dir', 'local_files_only'] 
-                          for keyword in call.keywords):
+                if not any(keyword.arg in ['cache_dir', 'local_files_only']
+                           for keyword in call.keywords):
                     self.add_smell(
                         "Tokenizer caching not used",
                         "Cache tokenizers to avoid re-downloading",
@@ -148,7 +151,7 @@ class HuggingFaceSmellDetector:
 
     def check_model_caching(self, node: nodes.Module, file_path: str):
         """Check if model caching is enabled when loading models.
-        
+
         Detects cases where models are loaded without caching configuration, which
         could lead to unnecessary re-downloads and slower loading times.
 
@@ -157,11 +160,11 @@ class HuggingFaceSmellDetector:
             file_path: Path to the file being analyzed
         """
         for call in node.nodes_of_class(nodes.Call):
-            if ('from_pretrained' in call.func.as_string() and 
-                ('AutoModel' in call.func.as_string() or 
+            if ('from_pretrained' in call.func.as_string() and
+                ('AutoModel' in call.func.as_string() or
                  'PreTrainedModel' in call.func.as_string())):
-                if not any(keyword.arg in ['cache_dir', 'local_files_only'] 
-                          for keyword in call.keywords):
+                if not any(keyword.arg in ['cache_dir', 'local_files_only']
+                           for keyword in call.keywords):
                     self.add_smell(
                         "Model caching not used",
                         "Cache models to avoid re-downloading",
@@ -173,7 +176,7 @@ class HuggingFaceSmellDetector:
 
     def check_deterministic_tokenization(self, node: nodes.Module, file_path: str):
         """Check if tokenization parameters are explicitly specified.
-        
+
         Detects cases where tokenization settings are not explicitly defined,
         which could lead to inconsistent preprocessing across runs.
 
@@ -182,11 +185,11 @@ class HuggingFaceSmellDetector:
             file_path: Path to the file being analyzed
         """
         for call in node.nodes_of_class(nodes.Call):
-            if ('from_pretrained' in call.func.as_string() and 
-                ('AutoTokenizer' in call.func.as_string() or 
+            if ('from_pretrained' in call.func.as_string() and
+                ('AutoTokenizer' in call.func.as_string() or
                  'PreTrainedTokenizer' in call.func.as_string())):
                 deterministic_params = [
-                    'do_lower_case', 'strip_accents', 'truncation', 
+                    'do_lower_case', 'strip_accents', 'truncation',
                     'padding', 'max_length', 'return_tensors'
                 ]
                 if not any(keyword.arg in deterministic_params for keyword in call.keywords):
@@ -201,7 +204,7 @@ class HuggingFaceSmellDetector:
 
     def check_efficient_data_loading(self, node: nodes.Module, file_path: str):
         """Check if efficient data loading techniques are being used.
-        
+
         Detects cases where standard data loading is used instead of optimized
         methods like datasets library or DataLoader.
 
@@ -209,22 +212,22 @@ class HuggingFaceSmellDetector:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        datasets_imported = any('datasets' in import_node.names[0][0] 
-                              for import_node in node.nodes_of_class(nodes.ImportFrom))
-        
+        datasets_imported = any('datasets' in import_node.names[0][0]
+                                for import_node in node.nodes_of_class(nodes.ImportFrom))
+
         efficient_patterns = [
             'load_dataset',
             'Dataset.from_',
             'DataLoader',
             'IterableDataset'
         ]
-        
+
         has_efficient_loading = any(
             pattern in call.func.as_string()
             for call in node.nodes_of_class(nodes.Call)
             for pattern in efficient_patterns
         )
-        
+
         if not (datasets_imported or has_efficient_loading):
             self.add_smell(
                 "Efficient data loading not detected",
@@ -237,7 +240,7 @@ class HuggingFaceSmellDetector:
 
     def check_distributed_training(self, node: nodes.Module, file_path: str):
         """Check if distributed training is configured when using training functionality.
-        
+
         Detects cases where training code is present but distributed training
         settings are not configured.
 
@@ -250,18 +253,18 @@ class HuggingFaceSmellDetector:
             'Trainer' in import_node.names[0][0] or 'TrainingArguments' in import_node.names[0][0]
             for import_node in node.nodes_of_class(nodes.ImportFrom)
         )
-        
+
         if not has_training_imports:
             return  # Skip if no training-related imports
 
         distributed_config = False
         for assign in node.nodes_of_class(nodes.Assign):
             if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
-                if any(keyword.arg in ['local_rank', 'n_gpu', 'distributed_training', 'tpu_num_cores'] 
-                      for keyword in assign.value.keywords):
+                if any(keyword.arg in ['local_rank', 'n_gpu', 'distributed_training', 'tpu_num_cores']
+                       for keyword in assign.value.keywords):
                     distributed_config = True
                     break
-        
+
         # Only report if TrainingArguments is used but without distributed config
         if not distributed_config and self._has_training_arguments(node):
             self.add_smell(
@@ -276,14 +279,14 @@ class HuggingFaceSmellDetector:
     def _has_training_arguments(self, node: nodes.Module) -> bool:
         """Helper method to check if TrainingArguments is actually used in the code"""
         return any(
-            isinstance(assign.targets[0], nodes.Name) and 
+            isinstance(assign.targets[0], nodes.Name) and
             assign.targets[0].name == 'TrainingArguments'
             for assign in node.nodes_of_class(nodes.Assign)
         )
 
     def check_mixed_precision_training(self, node: nodes.Module, file_path: str):
         """Check if mixed precision training is enabled.
-        
+
         Detects cases where training is performed without mixed precision settings,
         which could lead to suboptimal performance and memory usage.
 
@@ -298,12 +301,12 @@ class HuggingFaceSmellDetector:
         for assign in node.nodes_of_class(nodes.Assign):
             if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
                 if any((keyword.arg == 'fp16' and keyword.value.value) or
-                      (keyword.arg == 'bf16' and keyword.value.value) or
-                      keyword.arg == 'half_precision_backend'
-                      for keyword in assign.value.keywords):
+                       (keyword.arg == 'bf16' and keyword.value.value) or
+                       keyword.arg == 'half_precision_backend'
+                       for keyword in assign.value.keywords):
                     fp16_used = True
                     break
-        
+
         if not fp16_used:
             self.add_smell(
                 "Mixed precision training not enabled",
@@ -316,7 +319,7 @@ class HuggingFaceSmellDetector:
 
     def check_gradient_accumulation(self, node: nodes.Module, file_path: str):
         """Check if gradient accumulation is configured for training.
-        
+
         Detects cases where training is performed without gradient accumulation,
         which could be beneficial for handling larger effective batch sizes.
 
@@ -331,11 +334,11 @@ class HuggingFaceSmellDetector:
         gradient_accumulation = False
         for assign in node.nodes_of_class(nodes.Assign):
             if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
-                if any(keyword.arg == 'gradient_accumulation_steps' and keyword.value.value > 1 
-                      for keyword in assign.value.keywords):
+                if any(keyword.arg == 'gradient_accumulation_steps' and keyword.value.value > 1
+                       for keyword in assign.value.keywords):
                     gradient_accumulation = True
                     break
-        
+
         # Only report if training configuration is present but gradient accumulation isn't
         if not gradient_accumulation and self._has_training_code(node):
             self.add_smell(
@@ -349,7 +352,7 @@ class HuggingFaceSmellDetector:
 
     def check_learning_rate_scheduling(self, node: nodes.Module, file_path: str):
         """Check if learning rate scheduling is configured.
-        
+
         Detects cases where training is performed without learning rate scheduling,
         which could lead to suboptimal training dynamics.
 
@@ -364,11 +367,11 @@ class HuggingFaceSmellDetector:
         lr_scheduler_used = False
         for assign in node.nodes_of_class(nodes.Assign):
             if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
-                if any(keyword.arg in ['learning_rate_scheduler', 'lr_scheduler_type'] 
-                      for keyword in assign.value.keywords):
+                if any(keyword.arg in ['learning_rate_scheduler', 'lr_scheduler_type']
+                       for keyword in assign.value.keywords):
                     lr_scheduler_used = True
                     break
-        
+
         # Only report if training configuration is present but lr scheduler isn't
         if not lr_scheduler_used and self._has_training_code(node):
             self.add_smell(
@@ -382,7 +385,7 @@ class HuggingFaceSmellDetector:
 
     def check_early_stopping(self, node: nodes.Module, file_path: str):
         """Check if early stopping is implemented in training.
-        
+
         Detects cases where training code is present but early stopping
         mechanisms are not configured, which could lead to overfitting.
 
@@ -399,7 +402,7 @@ class HuggingFaceSmellDetector:
             if 'EarlyStoppingCallback' in call.func.as_string():
                 early_stopping_used = True
                 break
-            
+
         # Also check TrainingArguments for early_stopping_* parameters
         for assign in node.nodes_of_class(nodes.Assign):
             if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
@@ -427,21 +430,21 @@ class HuggingFaceSmellDetector:
             'train_dataset',
             'eval_dataset'
         ]
-        
+
         # Check imports
         has_training_imports = any(
             any(indicator in name for name, _ in import_node.names)
             for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom))
             for indicator in training_indicators
         )
-        
+
         # Check function calls and assignments
         has_training_usage = any(
-            any(indicator in node_item.as_string() 
+            any(indicator in node_item.as_string()
                 for indicator in training_indicators)
             for node_item in node.nodes_of_class((nodes.Call, nodes.Assign))
         )
-        
+
         return has_training_imports or has_training_usage
 
     def generate_report(self) -> str:
@@ -460,16 +463,16 @@ class HuggingFaceSmellDetector:
 
             report += f"{i}. Smell: {smell['smell']}\n"
             report += f"   File: {smell['file_path']}\n"
-            
+
             # Only show line number if it's not 0
             if smell['line_number'] != 0:
                 report += f"   Line: {smell['line_number']}\n"
-            
+
             # Only include code snippet if it's 3 lines or fewer
             code_lines = smell['code_snippet'].strip().split('\n')
             if len(code_lines) <= 3:
                 report += f"   Code Snippet:\n{smell['code_snippet']}\n"
-            
+
             report += f"   How to Fix: {smell['how_to_fix']}\n"
             report += f"   Benefits: {smell['benefits']}\n"
             report += f"   Strategies: {smell['strategies']}\n\n"
@@ -497,4 +500,3 @@ class HuggingFaceSmellDetector:
             }
             for smell in self.smells
         ]
-

@@ -1,141 +1,206 @@
-# ML Code Smell Detector (ml_smells_detector)
+# ML Code Smell Detector
 
-ML Code Smell Detector is a Python package that helps identify potential issues and bad practices in machine learning code. It includes detectors for framework-specific smells, Hugging Face-related smells, and general machine learning smells.
-
-## Features
-
-### Framework-Specific Smell Detector
-- Detects smells related to Pandas, NumPy, Scikit-learn, TensorFlow, and PyTorch
-- Checks for issues like unnecessary iteration, NaN equality checks, and more
-- Provides specific advice for each detected smell
-
-### Hugging Face Smell Detector
-- Identifies best practices for using the Hugging Face Transformers library
-- Checks for model versioning, tokenizer caching, and other Hugging Face-specific issues
-- Offers suggestions for improving Hugging Face model usage
-
-### General ML Smell Detector
-- Detects common machine learning code smells
-- Identifies potential data leakage, magic numbers, and cross-validation issues
-- Checks for proper feature scaling, handling of imbalanced datasets, and more
+ML Code Smell Detector is a Python package that statically analyzes Python ML code to identify potential issues and bad practices. It includes detectors for framework-specific smells (Pandas, NumPy, Scikit-learn, PyTorch, TensorFlow), Hugging Face Transformers, and general ML patterns.
 
 ## Installation
 
-You can install the ML Code Smell Detector using pip:
+Install [uv](https://docs.astral.sh/uv/) if you don't have it:
 
 ```bash
-pip install -e .
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Then install the package:
+
+```bash
+uv pip install ml-code-smell-detector
+```
+
+### Development install
+
+```bash
+git clone https://github.com/KarthikShivasankar/ml_code_smell_detector
+cd ml_code_smell_detector
+uv pip install -e ".[dev]"
 ```
 
 ## Usage
 
 ```bash
-ml_smell_detector analyze  <path_to_code>
+# Analyze a single file
+ml_smell_detector analyze path/to/file.py
+
+# Analyze a directory
+ml_smell_detector analyze path/to/project/
+
+# Specify output directory (default: ./output)
+ml_smell_detector analyze path/to/project/ --output-dir results/
+
+# Ignore specific folders during directory analysis
+ml_smell_detector analyze path/to/project/ --ignore tests docs __pycache__
 ```
 
+Reports are written to `analysis_report.txt` and `analysis_report.csv` in the output directory. Progress is displayed via a progress bar when analyzing directories.
 
-## Detailed Feature List
+## Running Tests
+
+```bash
+uv run pytest tests/
+
+# Single test file
+uv run pytest tests/test_framework_detector.py
+
+# With coverage
+uv run pytest tests/ --cov=ml_code_smell_detector
+```
+
+## Publishing to PyPI
+
+### Prerequisites
+
+1. Create an account at [pypi.org](https://pypi.org/account/register/)
+2. Go to **Account Settings → API tokens** and create a token scoped to the project (or `--scope=project` for a new upload)
+3. Store the token — you will only see it once
+
+### Build and publish
+
+```bash
+# Build the sdist and wheel into dist/
+uv build
+
+# Publish to PyPI — uv will prompt for credentials
+uv publish
+
+# Or pass the token directly
+uv publish --token pypi-<your-token-here>
+```
+
+### Publish to TestPyPI first (recommended for first release)
+
+```bash
+uv publish --publish-url https://test.pypi.org/legacy/ --token pypi-<your-test-token>
+```
+
+Verify the test install:
+
+```bash
+uv pip install --index-url https://test.pypi.org/simple/ ml-code-smell-detector
+```
+
+### Bump the version
+
+Edit `version` in `pyproject.toml`, then build and publish again.
+
+## Detection Scope
+
+The tool analyzes all Python code in a file regardless of nesting depth. Smells are detected inside:
+
+- Module-level code
+- Class bodies and class methods
+- Nested functions and closures
+
+**Import detection** uses prefix matching, so all of the following are recognized:
+
+```python
+import sklearn
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
+```
+
+The same applies to `pandas`, `numpy`, `torch`, `tensorflow`, and `transformers`.
+
+## Features
 
 ### Framework-Specific Smell Detector
-1. Pandas:
-   - Unnecessary iteration
-   - Chain indexing
-   - Inefficient merge operations
-   - Inplace operations
-   - Inefficient DataFrame conversion
-   - Missing data type specifications
-2. NumPy:
-   - NaN equality checks
-   - Missing random seed setting
-3. Scikit-learn:
-   - Missing feature scaling
-   - Absence of pipelines
-   - Lack of cross-validation
-   - Inconsistent random state usage
-   - Missing verbose mode in long-running operations
-   - Overreliance on accuracy metric
-4. TensorFlow:
-   - Missing random seed setting
-   - Absence of early stopping
-   - Lack of checkpointing
-   - Inefficient memory management
-   - Missing logging and visualization
-5. PyTorch:
-   - Missing random seed setting
-   - Inefficient data loading
-   - Incorrect gradient clearing
-   - Missing batch normalization
-   - Lack of learning rate scheduling
+
+**Pandas:**
+- Unnecessary iteration (iterrows)
+- Chain indexing
+- Inefficient merge operations
+- Inplace operations
+- Inefficient DataFrame conversion (`.values` vs `.to_numpy()`)
+- Missing data type specifications
+- Column selection issues
+- DataFrame mutation during iteration
+
+**NumPy:**
+- NaN equality checks (use `np.isnan()`)
+- Missing random seed
+- Inefficient array creation (missing `dtype`)
+- Suboptimal element-wise operations
+- Dtype inconsistency
+- Implicit broadcasting risks
+- Copy/view confusion
+- Missing axis specification
+
+**Scikit-learn:**
+- Missing feature scaling
+- Absence of Pipeline
+- Missing cross-validation
+- Inconsistent `random_state`
+- Missing verbose mode
+- Overreliance on accuracy metric
+- Missing unit tests
+- Data leakage
+- Missing exception handling
+
+**PyTorch:**
+- Missing `torch.manual_seed()`
+- Non-deterministic algorithms
+- DataLoader reproducibility
+- Missing mask in log operations
+- Direct `model.forward()` calls
+- Missing gradient zeroing
+- Missing batch normalization
+- Missing dropout
+- Missing data augmentation
+- Missing learning rate scheduler
+- Missing logging/monitoring
+- Missing eval mode
+
+**TensorFlow:**
+- Missing random seed, early stopping, checkpointing, memory management, logging
 
 ### Hugging Face Smell Detector
-1. Model versioning issues
-2. Missing tokenizer and model caching
-3. Inconsistent tokenization settings
-4. Inefficient data loading practices
-5. Lack of distributed training configuration
-6. Missing mixed precision training
-7. Absence of gradient accumulation for large batches
-8. Lack of learning rate scheduling
-9. Missing early stopping implementation
+
+- Model versioning issues
+- Missing tokenizer and model caching
+- Inconsistent tokenization settings
+- Inefficient data loading
+- Missing distributed training configuration
+- Missing mixed precision training
+- Missing gradient accumulation
+- Missing learning rate scheduling
+- Missing early stopping
 
 ### General ML Smell Detector
-1. Data leakage detection
-2. Magic number usage
-3. Inconsistent feature scaling
-4. Missing cross-validation
-5. Imbalanced dataset handling
-6. Feature selection issues
-7. Overreliance on single metrics
-8. Lack of model persistence
-9. Missing reproducibility measures
-10. Inefficient data loading for large datasets
-11. Unused feature detection
-12. Overfitting-prone practices
-13. Lack of error handling
-14. Hardcoded file paths
-15. Missing or incomplete documentation
 
-## Contributing
+- Data leakage detection
+- Magic number usage
+- Inconsistent feature scaling
+- Missing cross-validation
+- Imbalanced dataset handling
+- Feature selection issues
+- Overreliance on single metrics
+- Missing model persistence
+- Missing reproducibility measures
+- Inefficient data loading for large datasets
+- Unused feature detection
+- Overfitting-prone practices
+- Missing error handling
+- Hardcoded file paths
+- Missing or incomplete documentation
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## Building Documentation
+
+```bash
+cd docs && sphinx-build -b html source build/html
+```
 
 ## License
 
-This project is licensed under the MIT License.
-
-
-## Documentation
-
-To build the documentation:
-
-1. Install the development dependencies:
-   ```bash
-   pip install -e .[dev]
-   ```
-
-2. Navigate to the `docs` directory:
-   ```bash
-   cd docs
-   ```
-
-3. Build the documentation:
-   ```bash
-   make html
-   ```
-
-4. Open `docs/build/html/index.html` in your web browser to view the documentation.
-
-
-4. Change to the `docs` directory:
-
-   .. code-block:: console
-
-      cd docs
-
-5. Run the Sphinx build command:
-
-   .. code-block:: console
-
-      sphinx-build -b html source build/html
-
-This will generate the HTML documentation in the `docs/build/html` directory. You can open the `index.html` file in this directory to view the updated documentation.
+MIT
