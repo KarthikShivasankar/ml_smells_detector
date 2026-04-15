@@ -1,31 +1,35 @@
 Installation
 ============
 
-You can install the ML Code Smell Detector using pip:
+Install from PyPI:
 
 .. code-block:: bash
 
-   pip install -e .
+   pip install ml-code-smell-detector
 
-For development purposes, clone the repository and install in editable mode:
+For development, clone the repository and install in editable mode with ``uv``:
 
 .. code-block:: bash
 
-   Download the repository
-   cd "the repository's directory"
-   pip install -e .
+   git clone https://github.com/KarthikShivasankar/ml_smells_detector.git
+   cd ml_smells_detector
+   uv pip install -e ".[dev]"
 
-Dependencies
+Or with standard pip:
+
+.. code-block:: bash
+
+   pip install -e ".[dev]"
+
+Requirements
 ------------
 
-The package requires the following dependencies:
+- Python 3.9+
 
-- astroid
-- numpy
-- pandas
-- scikit-learn
-- tensorflow
-- torch
-- transformers
+Runtime dependencies (installed automatically):
 
-These will be automatically installed when you install the package using pip.
+- ``astroid`` — AST parsing
+- ``tqdm`` — progress bars
+
+The tool performs **static analysis only** and does not require ML frameworks
+(NumPy, Pandas, Scikit-learn, TensorFlow, PyTorch, Transformers) to be installed.

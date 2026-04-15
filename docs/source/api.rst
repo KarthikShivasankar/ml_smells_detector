@@ -11,9 +11,4 @@ This page provides detailed information about the ML Code Smell Detector API.
 Detectors
 ---------
 
-.. toctree::
-   :maxdepth: 2
-
-   detectors/framework_detector
-   detectors/huggingface_detector
-   detectors/ml_detector
+See :doc:`detectors/index` for detailed API documentation of each detector.

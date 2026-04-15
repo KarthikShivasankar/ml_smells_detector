@@ -7,7 +7,7 @@ name = "ml-code-smell-detector"
 version = "0.1.0"
 description = "A package to detect code smells in machine learning code"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
     { name = "Karthik Shivashankar", email = "karthik13sankar@outlook.com" }
