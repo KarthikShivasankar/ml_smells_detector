@@ -36,7 +36,7 @@ def test_sklearn_smell_detection(tmp_path):
 
 def test_generate_report():
     detector = FrameworkSpecificSmellDetector()
-    detector.smells = [{'name': 'Test Smell', 'how_to_fix': 'Fix it', 'benefits': 'Better code', 'strategies': 'Do this'}]
+    detector.smells = [{'framework': 'Test', 'name': 'Test Smell', 'how_to_fix': 'Fix it', 'benefits': 'Better code', 'strategies': 'Do this', 'line_number': 1, 'code_snippet': 'test code', 'file_path': 'test_file.py'}]
     report = detector.generate_report()
     assert 'Test Smell' in report
     assert 'Fix it' in report

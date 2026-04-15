@@ -1,6 +1,7 @@
 import astroid
 from astroid import nodes
 from typing import List, Dict, Any
+import sys
 
 class FrameworkSpecificSmellDetector:
     def __init__(self):
@@ -8,19 +9,53 @@ class FrameworkSpecificSmellDetector:
         self.framework_smells = self.get_smells()
 
     def detect_smells(self, file_path: str) -> List[Dict[str, str]]:
-        with open(file_path, 'r') as file:
-            content = file.read()
-        module = astroid.parse(content, module_name=file_path)
-        self.visit_module(module, file_path)
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+            module = astroid.parse(content, module_name=file_path)
+            
+            frameworks_used = self.get_frameworks_used(module)
+            if frameworks_used:
+                self.visit_module(module, file_path, frameworks_used)
+            else:
+                print(f"Skipping framework-specific smell detection for {file_path}: No relevant frameworks imported", file=sys.stderr)
+        except astroid.exceptions.AstroidSyntaxError as e:
+            print(f"Error parsing {file_path}: {str(e)}", file=sys.stderr)
+        except Exception as e:
+            print(f"Unexpected error while processing {file_path}: {str(e)}", file=sys.stderr)
         return self.smells
 
-    def visit_module(self, node: nodes.Module, file_path: str):
+    def get_frameworks_used(self, node: nodes.Module) -> List[str]:
+        frameworks = []
+        framework_imports = {
+            'pandas': 'Pandas',
+            'numpy': 'NumPy',
+            'sklearn': 'ScikitLearn',
+            'tensorflow': 'TensorFlow',
+            'torch': 'PyTorch'
+        }
+        for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
+            if isinstance(import_node, nodes.Import):
+                for name, _ in import_node.names:
+                    if name in framework_imports:
+                        frameworks.append(framework_imports[name])
+            elif isinstance(import_node, nodes.ImportFrom):
+                if import_node.modname in framework_imports:
+                    frameworks.append(framework_imports[import_node.modname])
+        return frameworks
+
+    def visit_module(self, node: nodes.Module, file_path: str, frameworks_used: List[str]):
         self.check_imports(node, file_path)
-        self.check_pandas_smells(node, file_path)
-        self.check_numpy_smells(node, file_path)
-        self.check_sklearn_smells(node, file_path)
-        self.check_tensorflow_smells(node, file_path)
-        self.check_pytorch_smells(node, file_path)
+        if 'Pandas' in frameworks_used:
+            self.check_pandas_smells(node, file_path)
+        if 'NumPy' in frameworks_used:
+            self.check_numpy_smells(node, file_path)
+        if 'ScikitLearn' in frameworks_used:
+            self.check_sklearn_smells(node, file_path)
+        if 'TensorFlow' in frameworks_used:
+            self.check_tensorflow_smells(node, file_path)
+        if 'PyTorch' in frameworks_used:
+            self.check_pytorch_smells(node, file_path)
 
     def add_smell(self, framework: str, smell_name: str, node: nodes.NodeNG, file_path: str):
         smell = next((s for s in self.framework_smells[framework] if s['name'] == smell_name), None)

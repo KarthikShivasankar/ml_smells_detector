@@ -1,0 +1,14 @@
+# Ignore pyrasbt directory
+pyrasbt/
+
+# Ignore qz directory
+qzresearch/
+
+# Ignore resear directory
+
+
+# Ignore sklearn directory
+sklearn/
+
+# Ignore tensorflow directory
+tensorflow/
