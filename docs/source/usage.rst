@@ -16,32 +16,7 @@ To analyze all Python files in a directory:
 
    ml_smell_detector analyze path/to/your/directory
 
-Python API
-----------
 
-You can also use the ML Code Smell Detector as a Python library:
-
-.. code-block:: python
-
-   from ml_code_smell_detector import FrameworkSpecificSmellDetector, HuggingFaceSmellDetector, ML_SmellDetector
-
-   # Initialize detectors
-   framework_detector = FrameworkSpecificSmellDetector()
-   huggingface_detector = HuggingFaceSmellDetector()
-   ml_detector = ML_SmellDetector()
-
-   # Analyze a file
-   file_path = 'path/to/your/file.py'
-   framework_smells = framework_detector.detect_smells(file_path)
-   huggingface_smells = huggingface_detector.detect_smells(file_path)
-   ml_smells = ml_detector.detect_smells(file_path)
-
-   # Print reports
-   print(framework_detector.generate_report())
-   print(huggingface_detector.generate_report())
-   print("General ML Smells:")
-   for smell in ml_smells:
-       print(f"- {smell}")
 
 Use Cases
 ---------
