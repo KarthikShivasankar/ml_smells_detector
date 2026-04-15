@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; ML Code Smell Detector 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=01f34227"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Framework-Specific Smell Detector" href="detectors/framework_detector.html" />
+    <link rel="prev" title="Features" href="features.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ML Code Smell Detector
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">Features</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_smells"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_smells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.get_frameworks_used"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.get_frameworks_used()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.visit_module"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.visit_module()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.add_smell"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.add_smell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pandas_smells"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pandas_smells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_iterrows_usage"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_iterrows_usage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_chain_indexing"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_chain_indexing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_merge_parameters"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_merge_parameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_inplace_operations"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_inplace_operations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_values_usage"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_values_usage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dtype_specification"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_dtype_specification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_column_selection"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_column_selection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dataframe_modification"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_dataframe_modification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_numpy_smells"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_numpy_smells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_nan_equality"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_nan_equality()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_random_seed"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_random_seed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_array_creation"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_array_creation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_inefficient_operations"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_inefficient_operations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dtype_consistency"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_dtype_consistency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_broadcasting_issues"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_broadcasting_issues()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_copy_view_issues"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_copy_view_issues()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_axis_specification"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_axis_specification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_sklearn_smells"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_sklearn_smells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_scaling_usage"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_scaling_usage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pipeline_usage"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pipeline_usage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_cross_validation"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_cross_validation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_random_state"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_random_state()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_verbose_mode"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_verbose_mode()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_threshold_metrics"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_threshold_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_unit_tests"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_unit_tests()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_data_leakage"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_data_leakage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_exception_handling"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_exception_handling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.check_imports"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.check_imports()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_smells"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_smells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_random_seed"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_random_seed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_deterministic"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_deterministic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_dataloader_random"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_dataloader_random()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_mask"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_mask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_forward"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_forward()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_grad_zero"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_grad_zero()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_batch_norm"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_batch_norm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_dropout"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_dropout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_augmentation"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_augmentation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_lr_scheduler"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_lr_scheduler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_logging"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_logging()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_eval_mode"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_pytorch_eval_mode()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tensorflow_smells"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tensorflow_smells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_random_seed"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_random_seed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_early_stopping"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_early_stopping()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_checkpointing"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_checkpointing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_memory_release"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_memory_release()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_mask"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_mask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_tensor_array"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_tensor_array()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_metrics"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_logging"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_logging()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_batch_norm"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_batch_norm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_dropout"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_dropout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_augmentation"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_augmentation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_lr_scheduler"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_lr_scheduler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_model_evaluation"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.detect_tf_model_evaluation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.generate_report"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.generate_report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.get_results"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.get_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.get_smells"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector.get_smells()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.detect_smells"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.detect_smells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.is_framework_used"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.is_framework_used()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.visit_module"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.visit_module()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.add_smell"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.add_smell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_model_versioning"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_model_versioning()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_tokenizer_caching"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_tokenizer_caching()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_model_caching"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_model_caching()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_deterministic_tokenization"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_deterministic_tokenization()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_efficient_data_loading"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_efficient_data_loading()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_distributed_training"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_distributed_training()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_mixed_precision_training"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_mixed_precision_training()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_gradient_accumulation"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_gradient_accumulation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_learning_rate_scheduling"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_learning_rate_scheduling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_early_stopping"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.check_early_stopping()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.generate_report"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.generate_report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.HuggingFaceSmellDetector.get_results"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector.get_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.add_smell"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.add_smell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.detect_smells"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.detect_smells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.is_package_used"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.is_package_used()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.visit_module"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.visit_module()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_imports"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_imports()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_data_leakage"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_data_leakage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_magic_numbers"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_magic_numbers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_feature_scaling"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_feature_scaling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_cross_validation"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_cross_validation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_imbalanced_dataset"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_imbalanced_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_feature_selection"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_feature_selection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_metric_selection"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_metric_selection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_model_persistence"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_model_persistence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_reproducibility"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_reproducibility()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_data_loading"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_data_loading()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_unused_features"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_unused_features()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_overfit_prone_practices"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_overfit_prone_practices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_error_handling"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_error_handling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_hardcoded_filepaths"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_hardcoded_filepaths()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.check_documentation"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.check_documentation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.generate_report"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.generate_report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml_code_smell_detector.ML_SmellDetector.get_results"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector.get_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#detectors">Detectors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="detectors/framework_detector.html">Framework-Specific Smell Detector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detectors/huggingface_detector.html">Hugging Face Smell Detector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detectors/ml_detector.html">General ML Smell Detector</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="detectors/index.html">Detectors</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ML Code Smell Detector</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<p>This page provides detailed information about the ML Code Smell Detector API.</p>
+<dl class="py class" id="module-ml_code_smell_detector">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ml_code_smell_detector.</span></span><span class="sig-name descname"><span class="pre">FrameworkSpecificSmellDetector</span></span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A detector for identifying code smells specific to ML frameworks like Pandas, NumPy, Scikit-learn, PyTorch and TensorFlow.</p>
+<p>This class analyzes Python code to detect common anti-patterns and suboptimal implementations
+when using popular machine learning frameworks. It provides suggestions for improvements
+and best practices.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_smells">
+<span class="sig-name descname"><span class="pre">detect_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_smells" title="Link to this definition"></a></dt>
+<dd><p>Analyze a Python file for framework-specific code smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the Python file to analyze</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>framework: The ML framework the smell relates to</p></li>
+<li><p>name: Name of the code smell</p></li>
+<li><p>how_to_fix: Instructions for fixing the issue</p></li>
+<li><p>benefits: Benefits of fixing the issue</p></li>
+<li><p>line_number: Line where the smell was detected</p></li>
+<li><p>code_snippet: The problematic code</p></li>
+<li><p>file_path: Path to the file containing the smell</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of dictionaries containing detected code smells with details like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.get_frameworks_used">
+<span class="sig-name descname"><span class="pre">get_frameworks_used</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.get_frameworks_used"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.get_frameworks_used" title="Link to this definition"></a></dt>
+<dd><p>Detect which ML frameworks are imported in the code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>node</strong> (<em>Module</em>) – AST node representing the Python module</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of framework names found in imports (e.g. [‘Pandas’, ‘NumPy’])</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.visit_module">
+<span class="sig-name descname"><span class="pre">visit_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frameworks_used</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.visit_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.visit_module" title="Link to this definition"></a></dt>
+<dd><p>Visit a Python module to detect framework-specific smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the Python module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+<li><p><strong>frameworks_used</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – List of frameworks detected in the code</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.add_smell">
+<span class="sig-name descname"><span class="pre">add_smell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">framework</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smell_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.add_smell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.add_smell" title="Link to this definition"></a></dt>
+<dd><p>Add a detected code smell to the results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>framework</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of the framework (e.g. ‘Pandas’, ‘NumPy’)</p></li>
+<li><p><strong>smell_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of the detected smell</p></li>
+<li><p><strong>node</strong> (<em>NodeNG</em>) – AST node where the smell was found</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file containing the smell</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pandas_smells">
+<span class="sig-name descname"><span class="pre">detect_pandas_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pandas_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pandas_smells" title="Link to this definition"></a></dt>
+<dd><p>Detect Pandas-specific code smells like:
+- Unnecessary iteration instead of vectorization
+- Chain indexing
+- Missing merge parameters
+- Inplace operations
+- Inefficient values usage
+- Missing dtype specifications
+- Suboptimal column selection
+- DataFrame modifications in loops</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the Python module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_iterrows_usage">
+<span class="sig-name descname"><span class="pre">detect_iterrows_usage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_iterrows_usage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_iterrows_usage" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_chain_indexing">
+<span class="sig-name descname"><span class="pre">detect_chain_indexing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_chain_indexing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_chain_indexing" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_merge_parameters">
+<span class="sig-name descname"><span class="pre">detect_merge_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_merge_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_merge_parameters" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_inplace_operations">
+<span class="sig-name descname"><span class="pre">detect_inplace_operations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_inplace_operations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_inplace_operations" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_values_usage">
+<span class="sig-name descname"><span class="pre">detect_values_usage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_values_usage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_values_usage" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dtype_specification">
+<span class="sig-name descname"><span class="pre">detect_dtype_specification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_dtype_specification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dtype_specification" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_column_selection">
+<span class="sig-name descname"><span class="pre">detect_column_selection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_column_selection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_column_selection" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dataframe_modification">
+<span class="sig-name descname"><span class="pre">detect_dataframe_modification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_dataframe_modification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dataframe_modification" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_numpy_smells">
+<span class="sig-name descname"><span class="pre">detect_numpy_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_numpy_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_numpy_smells" title="Link to this definition"></a></dt>
+<dd><p>Detect NumPy-specific code smells like:
+- NaN equality comparisons
+- Missing random seeds
+- Inefficient array creation
+- Non-vectorized operations
+- Dtype inconsistencies
+- Broadcasting issues
+- Copy/view confusion
+- Missing axis specifications</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the Python module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_nan_equality">
+<span class="sig-name descname"><span class="pre">detect_nan_equality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_nan_equality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_nan_equality" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_random_seed">
+<span class="sig-name descname"><span class="pre">detect_random_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_random_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_random_seed" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_array_creation">
+<span class="sig-name descname"><span class="pre">detect_array_creation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_array_creation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_array_creation" title="Link to this definition"></a></dt>
+<dd><p>Detect inefficient array creation patterns</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_inefficient_operations">
+<span class="sig-name descname"><span class="pre">detect_inefficient_operations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_inefficient_operations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_inefficient_operations" title="Link to this definition"></a></dt>
+<dd><p>Detect inefficient numerical operations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dtype_consistency">
+<span class="sig-name descname"><span class="pre">detect_dtype_consistency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_dtype_consistency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_dtype_consistency" title="Link to this definition"></a></dt>
+<dd><p>Detect potential dtype inconsistency issues</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_broadcasting_issues">
+<span class="sig-name descname"><span class="pre">detect_broadcasting_issues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_broadcasting_issues"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_broadcasting_issues" title="Link to this definition"></a></dt>
+<dd><p>Detect potential broadcasting issues</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_copy_view_issues">
+<span class="sig-name descname"><span class="pre">detect_copy_view_issues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_copy_view_issues"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_copy_view_issues" title="Link to this definition"></a></dt>
+<dd><p>Detect potential copy/view confusion</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_axis_specification">
+<span class="sig-name descname"><span class="pre">detect_axis_specification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_axis_specification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_axis_specification" title="Link to this definition"></a></dt>
+<dd><p>Detect missing axis specifications in array operations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_sklearn_smells">
+<span class="sig-name descname"><span class="pre">detect_sklearn_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_sklearn_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_sklearn_smells" title="Link to this definition"></a></dt>
+<dd><p>Detect Scikit-learn specific code smells like:
+- Missing data scaling
+- Not using pipelines
+- Missing cross validation
+- Missing random state
+- Missing verbose mode
+- Using only threshold-dependent metrics
+- Missing unit tests
+- Data leakage risks
+- Missing exception handling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the Python module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_scaling_usage">
+<span class="sig-name descname"><span class="pre">detect_scaling_usage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_scaling_usage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_scaling_usage" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pipeline_usage">
+<span class="sig-name descname"><span class="pre">detect_pipeline_usage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pipeline_usage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pipeline_usage" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_cross_validation">
+<span class="sig-name descname"><span class="pre">detect_cross_validation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_cross_validation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_cross_validation" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_random_state">
+<span class="sig-name descname"><span class="pre">detect_random_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_random_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_random_state" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_verbose_mode">
+<span class="sig-name descname"><span class="pre">detect_verbose_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_verbose_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_verbose_mode" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_threshold_metrics">
+<span class="sig-name descname"><span class="pre">detect_threshold_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_threshold_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_threshold_metrics" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_unit_tests">
+<span class="sig-name descname"><span class="pre">detect_unit_tests</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_unit_tests"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_unit_tests" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_data_leakage">
+<span class="sig-name descname"><span class="pre">detect_data_leakage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_data_leakage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_data_leakage" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_exception_handling">
+<span class="sig-name descname"><span class="pre">detect_exception_handling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_exception_handling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_exception_handling" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.check_imports">
+<span class="sig-name descname"><span class="pre">check_imports</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.check_imports"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.check_imports" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_smells">
+<span class="sig-name descname"><span class="pre">detect_pytorch_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_smells" title="Link to this definition"></a></dt>
+<dd><p>Detect PyTorch-specific code smells like:
+- Missing random seeds
+- Not using deterministic mode
+- DataLoader randomness issues
+- Missing masks for numerical operations
+- Direct forward() calls
+- Missing gradient zeroing
+- Missing batch normalization
+- Missing dropout
+- Missing data augmentation
+- Missing learning rate scheduling
+- Missing logging
+- Missing model evaluation mode</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the Python module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_random_seed">
+<span class="sig-name descname"><span class="pre">detect_pytorch_random_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_random_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_random_seed" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_deterministic">
+<span class="sig-name descname"><span class="pre">detect_pytorch_deterministic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_deterministic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_deterministic" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_dataloader_random">
+<span class="sig-name descname"><span class="pre">detect_pytorch_dataloader_random</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_dataloader_random"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_dataloader_random" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_mask">
+<span class="sig-name descname"><span class="pre">detect_pytorch_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_mask" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_forward">
+<span class="sig-name descname"><span class="pre">detect_pytorch_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_forward" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_grad_zero">
+<span class="sig-name descname"><span class="pre">detect_pytorch_grad_zero</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_grad_zero"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_grad_zero" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_batch_norm">
+<span class="sig-name descname"><span class="pre">detect_pytorch_batch_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_batch_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_batch_norm" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_dropout">
+<span class="sig-name descname"><span class="pre">detect_pytorch_dropout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_dropout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_dropout" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_augmentation">
+<span class="sig-name descname"><span class="pre">detect_pytorch_augmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_augmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_augmentation" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_lr_scheduler">
+<span class="sig-name descname"><span class="pre">detect_pytorch_lr_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_lr_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_lr_scheduler" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_logging">
+<span class="sig-name descname"><span class="pre">detect_pytorch_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_logging" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_eval_mode">
+<span class="sig-name descname"><span class="pre">detect_pytorch_eval_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_pytorch_eval_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_pytorch_eval_mode" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tensorflow_smells">
+<span class="sig-name descname"><span class="pre">detect_tensorflow_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tensorflow_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tensorflow_smells" title="Link to this definition"></a></dt>
+<dd><p>Detect TensorFlow-specific code smells like:
+- Missing random seeds
+- Missing early stopping
+- Missing checkpointing
+- Memory leaks
+- Missing masks
+- Python lists instead of TensorArrays
+- Missing threshold-independent metrics
+- Missing logging
+- Missing batch normalization
+- Missing dropout
+- Missing data augmentation
+- Missing learning rate scheduling
+- Missing model evaluation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the Python module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_random_seed">
+<span class="sig-name descname"><span class="pre">detect_tf_random_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_random_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_random_seed" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_early_stopping">
+<span class="sig-name descname"><span class="pre">detect_tf_early_stopping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_early_stopping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_early_stopping" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_checkpointing">
+<span class="sig-name descname"><span class="pre">detect_tf_checkpointing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_checkpointing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_checkpointing" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_memory_release">
+<span class="sig-name descname"><span class="pre">detect_tf_memory_release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_memory_release"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_memory_release" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_mask">
+<span class="sig-name descname"><span class="pre">detect_tf_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_mask" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_tensor_array">
+<span class="sig-name descname"><span class="pre">detect_tf_tensor_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_tensor_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_tensor_array" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_metrics">
+<span class="sig-name descname"><span class="pre">detect_tf_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_metrics" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_logging">
+<span class="sig-name descname"><span class="pre">detect_tf_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_logging" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_batch_norm">
+<span class="sig-name descname"><span class="pre">detect_tf_batch_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_batch_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_batch_norm" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_dropout">
+<span class="sig-name descname"><span class="pre">detect_tf_dropout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_dropout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_dropout" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_augmentation">
+<span class="sig-name descname"><span class="pre">detect_tf_augmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_augmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_augmentation" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_lr_scheduler">
+<span class="sig-name descname"><span class="pre">detect_tf_lr_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_lr_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_lr_scheduler" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_model_evaluation">
+<span class="sig-name descname"><span class="pre">detect_tf_model_evaluation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.detect_tf_model_evaluation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.detect_tf_model_evaluation" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>)</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.generate_report">
+<span class="sig-name descname"><span class="pre">generate_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.generate_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.generate_report" title="Link to this definition"></a></dt>
+<dd><p>Generate a detailed text report of all detected code smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>Framework-specific smell counts</p></li>
+<li><p>Details for each smell including location and fixes</p></li>
+<li><p>Total number of smells detected</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A formatted string containing the analysis report with</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.get_results">
+<span class="sig-name descname"><span class="pre">get_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.get_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.get_results" title="Link to this definition"></a></dt>
+<dd><p>Get a simplified list of detected code smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>framework: The ML framework</p></li>
+<li><p>name: Name of the smell</p></li>
+<li><p>fix: How to fix it</p></li>
+<li><p>benefits: Benefits of fixing</p></li>
+<li><p>location: Where it was found</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of dictionaries containing</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.FrameworkSpecificSmellDetector.get_smells">
+<span class="sig-name descname"><span class="pre">get_smells</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/framework_detector.html#FrameworkSpecificSmellDetector.get_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.FrameworkSpecificSmellDetector.get_smells" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ml_code_smell_detector.</span></span><span class="sig-name descname"><span class="pre">HuggingFaceSmellDetector</span></span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A detector class that identifies common code smells in Hugging Face Transformers code.</p>
+<p>This detector analyzes Python code that uses the Hugging Face Transformers library and identifies
+potential issues and best practices violations related to model training, data processing,
+and performance optimization.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.detect_smells">
+<span class="sig-name descname"><span class="pre">detect_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.detect_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.detect_smells" title="Link to this definition"></a></dt>
+<dd><p>Analyze a Python file for Hugging Face-related code smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the Python file to analyze.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of dictionaries containing detected code smells and their details.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.is_framework_used">
+<span class="sig-name descname"><span class="pre">is_framework_used</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">framework</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.is_framework_used"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.is_framework_used" title="Link to this definition"></a></dt>
+<dd><p>Check if a specific framework is imported in the module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>framework</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of the framework to check for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the framework is imported, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.visit_module">
+<span class="sig-name descname"><span class="pre">visit_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.visit_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.visit_module" title="Link to this definition"></a></dt>
+<dd><p>Visit a module node and run all smell detection checks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.add_smell">
+<span class="sig-name descname"><span class="pre">add_smell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">benefits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.add_smell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.add_smell" title="Link to this definition"></a></dt>
+<dd><p>Add a detected code smell to the results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smell</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Description of the code smell</p></li>
+<li><p><strong>fix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – How to fix the issue</p></li>
+<li><p><strong>benefits</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Benefits of fixing the issue</p></li>
+<li><p><strong>strategies</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Specific strategies to implement the fix</p></li>
+<li><p><strong>node</strong> (<em>NodeNG</em>) – AST node where the smell was detected</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file containing the smell</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_model_versioning">
+<span class="sig-name descname"><span class="pre">check_model_versioning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_model_versioning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_model_versioning" title="Link to this definition"></a></dt>
+<dd><p>Check if model versions are explicitly specified when loading pre-trained models.</p>
+<p>Detects cases where models are loaded without version tags, which could lead to
+reproducibility issues.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_tokenizer_caching">
+<span class="sig-name descname"><span class="pre">check_tokenizer_caching</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_tokenizer_caching"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_tokenizer_caching" title="Link to this definition"></a></dt>
+<dd><p>Check if tokenizer caching is enabled when loading tokenizers.</p>
+<p>Detects cases where tokenizers are loaded without caching configuration, which
+could lead to unnecessary re-downloads and slower loading times.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_model_caching">
+<span class="sig-name descname"><span class="pre">check_model_caching</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_model_caching"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_model_caching" title="Link to this definition"></a></dt>
+<dd><p>Check if model caching is enabled when loading models.</p>
+<p>Detects cases where models are loaded without caching configuration, which
+could lead to unnecessary re-downloads and slower loading times.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_deterministic_tokenization">
+<span class="sig-name descname"><span class="pre">check_deterministic_tokenization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_deterministic_tokenization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_deterministic_tokenization" title="Link to this definition"></a></dt>
+<dd><p>Check if tokenization parameters are explicitly specified.</p>
+<p>Detects cases where tokenization settings are not explicitly defined,
+which could lead to inconsistent preprocessing across runs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_efficient_data_loading">
+<span class="sig-name descname"><span class="pre">check_efficient_data_loading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_efficient_data_loading"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_efficient_data_loading" title="Link to this definition"></a></dt>
+<dd><p>Check if efficient data loading techniques are being used.</p>
+<p>Detects cases where standard data loading is used instead of optimized
+methods like datasets library or DataLoader.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_distributed_training">
+<span class="sig-name descname"><span class="pre">check_distributed_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_distributed_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_distributed_training" title="Link to this definition"></a></dt>
+<dd><p>Check if distributed training is configured when using training functionality.</p>
+<p>Detects cases where training code is present but distributed training
+settings are not configured.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_mixed_precision_training">
+<span class="sig-name descname"><span class="pre">check_mixed_precision_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_mixed_precision_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_mixed_precision_training" title="Link to this definition"></a></dt>
+<dd><p>Check if mixed precision training is enabled.</p>
+<p>Detects cases where training is performed without mixed precision settings,
+which could lead to suboptimal performance and memory usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_gradient_accumulation">
+<span class="sig-name descname"><span class="pre">check_gradient_accumulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_gradient_accumulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_gradient_accumulation" title="Link to this definition"></a></dt>
+<dd><p>Check if gradient accumulation is configured for training.</p>
+<p>Detects cases where training is performed without gradient accumulation,
+which could be beneficial for handling larger effective batch sizes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_learning_rate_scheduling">
+<span class="sig-name descname"><span class="pre">check_learning_rate_scheduling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_learning_rate_scheduling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_learning_rate_scheduling" title="Link to this definition"></a></dt>
+<dd><p>Check if learning rate scheduling is configured.</p>
+<p>Detects cases where training is performed without learning rate scheduling,
+which could lead to suboptimal training dynamics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.check_early_stopping">
+<span class="sig-name descname"><span class="pre">check_early_stopping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.check_early_stopping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.check_early_stopping" title="Link to this definition"></a></dt>
+<dd><p>Check if early stopping is implemented in training.</p>
+<p>Detects cases where training code is present but early stopping
+mechanisms are not configured, which could lead to overfitting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.generate_report">
+<span class="sig-name descname"><span class="pre">generate_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.generate_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.generate_report" title="Link to this definition"></a></dt>
+<dd><p>Generate a formatted report of all detected code smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A string containing the formatted report with all detected smells
+and their counts.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.HuggingFaceSmellDetector.get_results">
+<span class="sig-name descname"><span class="pre">get_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/huggingface_detector.html#HuggingFaceSmellDetector.get_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.HuggingFaceSmellDetector.get_results" title="Link to this definition"></a></dt>
+<dd><p>Get the detected smells in a simplified format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of dictionaries containing smell details in a simplified format
+suitable for integration with other tools.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ml_code_smell_detector.</span></span><span class="sig-name descname"><span class="pre">ML_SmellDetector</span></span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A detector for identifying common code smells in machine learning code.</p>
+<p>This class analyzes Python source code to detect potential issues and anti-patterns
+commonly found in machine learning projects, such as data leakage, improper feature
+scaling, missing cross-validation, and more.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.add_smell">
+<span class="sig-name descname"><span class="pre">add_smell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.add_smell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.add_smell" title="Link to this definition"></a></dt>
+<dd><p>Add a detected code smell to the collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smell</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Description of the detected smell</p></li>
+<li><p><strong>node</strong> (<em>NodeNG</em>) – The AST node where the smell was detected</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file containing the smell</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.detect_smells">
+<span class="sig-name descname"><span class="pre">detect_smells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.detect_smells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.detect_smells" title="Link to this definition"></a></dt>
+<dd><p>Analyze a Python file for ML-related code smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the Python file to analyze</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of dictionaries containing detected smell information</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.is_package_used">
+<span class="sig-name descname"><span class="pre">is_package_used</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">package</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.is_package_used"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.is_package_used" title="Link to this definition"></a></dt>
+<dd><p>Check if a specific package is imported in the module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>package</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of the package to check for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the package is imported, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.visit_module">
+<span class="sig-name descname"><span class="pre">visit_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.visit_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.visit_module" title="Link to this definition"></a></dt>
+<dd><p>Run all smell detection checks on a module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_imports">
+<span class="sig-name descname"><span class="pre">check_imports</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_imports"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_imports" title="Link to this definition"></a></dt>
+<dd><p>Track imports used in the module for later analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_data_leakage">
+<span class="sig-name descname"><span class="pre">check_data_leakage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_data_leakage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_data_leakage" title="Link to this definition"></a></dt>
+<dd><p>Detect potential data leakage from preprocessing before train-test split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_magic_numbers">
+<span class="sig-name descname"><span class="pre">check_magic_numbers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_magic_numbers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_magic_numbers" title="Link to this definition"></a></dt>
+<dd><p>Detect magic numbers in ML-related code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_feature_scaling">
+<span class="sig-name descname"><span class="pre">check_feature_scaling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_feature_scaling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_feature_scaling" title="Link to this definition"></a></dt>
+<dd><p>Detect inconsistent feature scaling methods across the codebase.</p>
+<p>Looks for multiple different scaling methods (StandardScaler, MinMaxScaler, etc.)
+being used, which could lead to inconsistent results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_cross_validation">
+<span class="sig-name descname"><span class="pre">check_cross_validation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_cross_validation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_cross_validation" title="Link to this definition"></a></dt>
+<dd><p>Check if cross-validation is properly implemented in model training.</p>
+<p>Detects if common cross-validation methods (KFold, cross_val_score, etc.)
+are missing in model training code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_imbalanced_dataset">
+<span class="sig-name descname"><span class="pre">check_imbalanced_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_imbalanced_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_imbalanced_dataset" title="Link to this definition"></a></dt>
+<dd><p>Check if imbalanced dataset handling techniques are used in classification tasks.</p>
+<p>Looks for common techniques like SMOTE, class weights, or stratification
+when dealing with classification problems.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_feature_selection">
+<span class="sig-name descname"><span class="pre">check_feature_selection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_feature_selection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_feature_selection" title="Link to this definition"></a></dt>
+<dd><p>Detect feature selection practices and validate their implementation.</p>
+<p>Ensures feature selection is performed with proper validation strategy
+to avoid selection bias.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_metric_selection">
+<span class="sig-name descname"><span class="pre">check_metric_selection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_metric_selection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_metric_selection" title="Link to this definition"></a></dt>
+<dd><p>Validate the choice of evaluation metrics for ML models.</p>
+<p>Ensures appropriate metrics are used for classification and regression tasks,
+warning against using only basic metrics like accuracy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_model_persistence">
+<span class="sig-name descname"><span class="pre">check_model_persistence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_model_persistence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_model_persistence" title="Link to this definition"></a></dt>
+<dd><p>Check model saving practices and associated preprocessing steps.</p>
+<p>Ensures models are saved with their preprocessing steps and proper versioning
+for reproducibility.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_reproducibility">
+<span class="sig-name descname"><span class="pre">check_reproducibility</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_reproducibility"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_reproducibility" title="Link to this definition"></a></dt>
+<dd><p>Check if random seeds are properly set for reproducibility.</p>
+<p>Ensures random seeds are set for all relevant libraries (numpy, random,
+framework-specific) in ML operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_data_loading">
+<span class="sig-name descname"><span class="pre">check_data_loading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_data_loading"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_data_loading" title="Link to this definition"></a></dt>
+<dd><p>Analyze data loading practices for potential issues.</p>
+<p>Checks for proper handling of large datasets, including batch processing
+and file size checks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_unused_features">
+<span class="sig-name descname"><span class="pre">check_unused_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_unused_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_unused_features" title="Link to this definition"></a></dt>
+<dd><p>Detect potentially unused features or variables in ML code.</p>
+<p>Identifies variables that are defined but not used, excluding common
+variable names and special prefixes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_overfit_prone_practices">
+<span class="sig-name descname"><span class="pre">check_overfit_prone_practices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_overfit_prone_practices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_overfit_prone_practices" title="Link to this definition"></a></dt>
+<dd><p>Detect practices that might lead to overfitting.</p>
+<p>Checks feature engineering functions for proper train/test separation
+to avoid data leakage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_error_handling">
+<span class="sig-name descname"><span class="pre">check_error_handling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_error_handling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_error_handling" title="Link to this definition"></a></dt>
+<dd><p>Check for proper error handling in critical ML operations.</p>
+<p>Ensures try-except blocks or validation checks are present for data
+operations and model-related tasks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_hardcoded_filepaths">
+<span class="sig-name descname"><span class="pre">check_hardcoded_filepaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_hardcoded_filepaths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_hardcoded_filepaths" title="Link to this definition"></a></dt>
+<dd><p>Detect hardcoded file paths in the code.</p>
+<p>Identifies hardcoded paths that should be moved to configuration files
+or environment variables, excluding common development paths.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.check_documentation">
+<span class="sig-name descname"><span class="pre">check_documentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.check_documentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.check_documentation" title="Link to this definition"></a></dt>
+<dd><p>Check for proper documentation in ML-related code.</p>
+<p>Ensures functions and classes have appropriate docstrings, especially
+for those with parameters or return values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Module</em>) – AST node representing the module</p></li>
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file being analyzed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.generate_report">
+<span class="sig-name descname"><span class="pre">generate_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.generate_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.generate_report" title="Link to this definition"></a></dt>
+<dd><p>Generate a human-readable report of all detected smells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Formatted string containing the analysis report</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ml_code_smell_detector.ML_SmellDetector.get_results">
+<span class="sig-name descname"><span class="pre">get_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ml_code_smell_detector/detectors/ml_detector.html#ML_SmellDetector.get_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ml_code_smell_detector.ML_SmellDetector.get_results" title="Link to this definition"></a></dt>
+<dd><p>Get the analysis results in a structured format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of dictionaries containing smell details and locations</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="detectors">
+<h2>Detectors<a class="headerlink" href="#detectors" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="detectors/framework_detector.html">Framework-Specific Smell Detector</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="detectors/framework_detector.html#ml_code_smell_detector.detectors.framework_detector.FrameworkSpecificSmellDetector"><code class="docutils literal notranslate"><span class="pre">FrameworkSpecificSmellDetector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="detectors/framework_detector.html#source-code">Source Code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="detectors/huggingface_detector.html">Hugging Face Smell Detector</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="detectors/huggingface_detector.html#ml_code_smell_detector.detectors.huggingface_detector.HuggingFaceSmellDetector"><code class="docutils literal notranslate"><span class="pre">HuggingFaceSmellDetector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="detectors/huggingface_detector.html#source-code">Source Code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="detectors/ml_detector.html">General ML Smell Detector</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="detectors/ml_detector.html#ml_code_smell_detector.detectors.ml_detector.ML_SmellDetector"><code class="docutils literal notranslate"><span class="pre">ML_SmellDetector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="detectors/ml_detector.html#source-code">Source Code</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="features.html" class="btn btn-neutral float-left" title="Features" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="detectors/framework_detector.html" class="btn btn-neutral float-right" title="Framework-Specific Smell Detector" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Your Name.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -12,3 +12,9 @@ sklearn/
 
 # Ignore tensorflow directory
 tensorflow/
+
+chap/
+
+evaluation/
+
+output/
