@@ -202,3 +202,15 @@ class ML_SmellDetector:
         report += f"\nTotal smells detected: {len(self.smells)}"
         return report
 
+    def get_results(self) -> List[Dict[str, str]]:
+        return [
+            {
+                'framework': 'General ML',
+                'name': smell['smell'],
+                'fix': "Not specified",
+                'benefits': "Not specified",
+                'location': f"Line {smell['line_number']}" if smell['line_number'] != 0 else ""
+            }
+            for smell in self.smells
+        ]
+

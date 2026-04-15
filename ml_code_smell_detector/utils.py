@@ -1,6 +1,11 @@
 import os
 import astroid
 
+
+def ensure_directory_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
 def create_sample_file(filename, content):
     """
     Create a sample file with the given filename and content.

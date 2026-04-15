@@ -214,3 +214,15 @@ class HuggingFaceSmellDetector:
         report += f"\nTotal smells detected: {len(self.smells)}"
         return report
 
+    def get_results(self) -> List[Dict[str, str]]:
+        return [
+            {
+                'framework': 'Hugging Face',
+                'name': smell['smell'],
+                'fix': smell['how_to_fix'],
+                'benefits': smell['benefits'],
+                'location': f"Line {smell['line_number']}" if smell['line_number'] != 0 else ""
+            }
+            for smell in self.smells
+        ]
+

@@ -36,7 +36,19 @@ ML Code Smell Detector is a Python package that helps identify potential issues 
 
 You can install the ML Code Smell Detector using pip:
 
+```bash
+pip install -e .
+```
 
+## Usage
+
+```bash
+ml_smell_detector analyze --path <path_to_code>
+```
+
+```bash
+ml_smell_detector analyze test_all.py
+```
 
 ## Detailed Feature List
 
@@ -106,3 +118,40 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License.
+
+
+## Documentation
+
+To build the documentation:
+
+1. Install the development dependencies:
+   ```bash
+   pip install -e .[dev]
+   ```
+
+2. Navigate to the `docs` directory:
+   ```bash
+   cd docs
+   ```
+
+3. Build the documentation:
+   ```bash
+   make html
+   ```
+
+4. Open `docs/build/html/index.html` in your web browser to view the documentation.
+
+
+4. Change to the `docs` directory:
+
+   .. code-block:: console
+
+      cd docs
+
+5. Run the Sphinx build command:
+
+   .. code-block:: console
+
+      sphinx-build -b html source build/html
+
+This will generate the HTML documentation in the `docs/build/html` directory. You can open the `index.html` file in this directory to view the updated documentation.
