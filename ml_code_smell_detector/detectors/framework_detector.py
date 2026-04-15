@@ -297,7 +297,7 @@ class FrameworkSpecificSmellDetector:
 
     def detect_nan_equality(self, node: nodes.Module, file_path: str):
         for compare in node.nodes_of_class(nodes.Compare):
-            if any('np.nan' in getattr(op[0], 'as_string', lambda: '')() for op in compare.ops):
+            if any('np.nan' in getattr(op[1], 'as_string', lambda: '')() for op in compare.ops):
                 self.add_smell('NumPy', 'NaN Equality Checker', compare, file_path)
 
     def detect_random_seed(self, node: nodes.Module, file_path: str):
@@ -347,7 +347,7 @@ class FrameworkSpecificSmellDetector:
         for loop in node.nodes_of_class(nodes.For):
             # Check for element-wise operations in loops
             if any(op in loop.as_string() for op in ['np.sum', 'np.mean', 'np.max', 'np.min']):
-                self.add_smell('NumPy', 'Vectorization Opportunity', loop, file_path)
+                self.add_smell('NumPy', 'Inefficient Operations', loop, file_path)
 
         # Check for inefficient concatenation
         for call in node.nodes_of_class(nodes.Call):
@@ -356,7 +356,7 @@ class FrameworkSpecificSmellDetector:
                 while parent and not isinstance(parent, nodes.For):
                     parent = parent.parent
                 if parent:  # If concatenate is inside a loop
-                    self.add_smell('NumPy', 'Inefficient Concatenation', call, file_path)
+                    self.add_smell('NumPy', 'Inefficient Operations', call, file_path)
 
     def detect_dtype_consistency(self, node: nodes.Module, file_path: str):
         """Detect potential dtype inconsistency issues"""
@@ -419,7 +419,7 @@ class FrameworkSpecificSmellDetector:
                 self.add_smell('NumPy', 'Missing Axis Specification', call, file_path)
 
     # Scikit-learn Detection Methods
-    def detect_sklearn_smells(self, node: nodes.Module, file_path: str):
+    def detect_scikitlearn_smells(self, node: nodes.Module, file_path: str):
         """Detect Scikit-learn specific code smells like:
         - Missing data scaling
         - Not using pipelines
@@ -773,7 +773,7 @@ class FrameworkSpecificSmellDetector:
             if 'DataLoader' in call.func.as_string():
                 # Check if it's actually a PyTorch DataLoader
                 is_pytorch_dataloader = any(
-                    'torch' in imp.names[0][0]
+                    'torch' in imp.modname
                     for imp in node.nodes_of_class(nodes.ImportFrom)
                 )
 
@@ -844,7 +844,7 @@ class FrameworkSpecificSmellDetector:
         # Check if there's actual training happening
         has_training_loop = any(
             'loss.backward' in call.func.as_string() or
-            'backward()' in call.func.as_string()
+            'backward' in call.func.as_string()
             for call in node.nodes_of_class(nodes.Call)
         )
 
@@ -899,8 +899,8 @@ class FrameworkSpecificSmellDetector:
         ]) > 2
 
         has_training_code = any(
-            'train()' in call.func.as_string() or
-            'backward()' in call.func.as_string()
+            'train' in call.func.as_string() or
+            'backward' in call.func.as_string()
             for call in node.nodes_of_class(nodes.Call)
         )
 
@@ -927,7 +927,7 @@ class FrameworkSpecificSmellDetector:
         )
 
         has_training = any(
-            'train()' in call.func.as_string() or
+            'train' in call.func.as_string() or
             'fit' in call.func.as_string()
             for call in node.nodes_of_class(nodes.Call)
         )
@@ -973,8 +973,8 @@ class FrameworkSpecificSmellDetector:
     def detect_pytorch_logging(self, node: nodes.Module, file_path: str):
         # Check if there's actual training to log
         has_training_loop = any(
-            'train()' in call.func.as_string() or
-            'backward()' in call.func.as_string()
+            'train' in call.func.as_string() or
+            'backward' in call.func.as_string()
             for call in node.nodes_of_class(nodes.Call)
         )
 
@@ -1014,7 +1014,7 @@ class FrameworkSpecificSmellDetector:
         )
 
         has_eval_mode = any(
-            'eval()' in call.func.as_string() or
+            'eval' in call.func.as_string() or
             'train(False)' in call.func.as_string()
             for call in node.nodes_of_class(nodes.Call)
         )

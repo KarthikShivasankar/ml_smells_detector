@@ -261,7 +261,7 @@ class HuggingFaceSmellDetector:
 
         distributed_config = False
         for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
+            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
                 if any(keyword.arg in ['local_rank', 'n_gpu', 'distributed_training', 'tpu_num_cores']
                        for keyword in assign.value.keywords):
                     distributed_config = True
@@ -281,7 +281,7 @@ class HuggingFaceSmellDetector:
     def _has_training_arguments(self, node: nodes.Module) -> bool:
         """Helper method to check if TrainingArguments is actually used in the code"""
         return any(
-            isinstance(assign.targets[0], nodes.Name) and
+            isinstance(assign.targets[0], nodes.AssignName) and
             assign.targets[0].name == 'TrainingArguments'
             for assign in node.nodes_of_class(nodes.Assign)
         )
@@ -301,7 +301,7 @@ class HuggingFaceSmellDetector:
 
         fp16_used = False
         for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
+            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
                 if any((keyword.arg == 'fp16' and keyword.value.value) or
                        (keyword.arg == 'bf16' and keyword.value.value) or
                        keyword.arg == 'half_precision_backend'
@@ -335,7 +335,7 @@ class HuggingFaceSmellDetector:
 
         gradient_accumulation = False
         for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
+            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
                 if any(keyword.arg == 'gradient_accumulation_steps' and keyword.value.value > 1
                        for keyword in assign.value.keywords):
                     gradient_accumulation = True
@@ -368,7 +368,7 @@ class HuggingFaceSmellDetector:
 
         lr_scheduler_used = False
         for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
+            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
                 if any(keyword.arg in ['learning_rate_scheduler', 'lr_scheduler_type']
                        for keyword in assign.value.keywords):
                     lr_scheduler_used = True
@@ -407,7 +407,7 @@ class HuggingFaceSmellDetector:
 
         # Also check TrainingArguments for early_stopping_* parameters
         for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.Name) and assign.targets[0].name == 'TrainingArguments':
+            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
                 if any(keyword.arg.startswith('early_stopping_') for keyword in assign.value.keywords):
                     early_stopping_used = True
                     break

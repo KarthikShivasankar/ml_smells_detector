@@ -307,19 +307,47 @@ The same applies to `pandas`, `numpy`, `torch`, `tensorflow`, and `transformers`
 
 ## Running Tests
 
+The test suite has **212 tests** covering all three detector classes, utilities, and the CLI.
+
 ```bash
-# Run all tests
-uv run pytest tests/
+# Run the full test suite
+python -m pytest tests/
 
-# Single test file
-uv run pytest tests/test_framework_detector.py
+# Run with verbose output
+python -m pytest tests/ -v
 
-# Single test case
-uv run pytest tests/test_sklearn_cv_detector.py::TestCrossValidationDetector::test_all_cv_files
+# Run a specific test module
+python -m pytest tests/test_pandas_smells.py
+python -m pytest tests/test_pytorch_smells.py
+python -m pytest tests/test_tensorflow_smells.py
+python -m pytest tests/test_sklearn_smells.py
+python -m pytest tests/test_numpy_smells.py
+python -m pytest tests/test_huggingface_smells.py
+python -m pytest tests/test_ml_detector.py
+python -m pytest tests/test_utils.py
+python -m pytest tests/test_cli.py
+
+# Run a single test class or function
+python -m pytest tests/test_sklearn_smells.py::TestCrossValidationChecker
+python -m pytest tests/test_pytorch_smells.py::TestGradientClearChecker::test_detects_missing_zero_grad
 
 # With coverage report
-uv run pytest tests/ --cov=ml_code_smell_detector
+python -m pytest tests/ --cov=ml_code_smell_detector --cov-report=term-missing
 ```
+
+### Test Structure
+
+| File | Covers | Tests |
+|---|---|---|
+| `test_pandas_smells.py` | Pandas smells (Unnecessary Iteration, Chain Indexing, Merge Params, InPlace, etc.) | ~20 |
+| `test_numpy_smells.py` | NumPy smells (NaN equality, randomness, axis, dtype, etc.) | ~16 |
+| `test_sklearn_smells.py` | Sklearn smells (Scaler, Pipeline, CV, Randomness, Verbose, Threshold, etc.) | ~20 |
+| `test_pytorch_smells.py` | PyTorch smells (Randomness, Determinism, Gradients, BatchNorm, Dropout, etc.) | ~20 |
+| `test_tensorflow_smells.py` | TensorFlow smells (Randomness, EarlyStopping, Checkpointing, Memory, etc.) | ~20 |
+| `test_huggingface_smells.py` | HuggingFace smells (versioning, caching, mixed precision, etc.) | ~18 |
+| `test_ml_detector.py` | General ML smells (leakage, magic numbers, CV, reproducibility, etc.) | ~22 |
+| `test_utils.py` | AST utility functions | ~30 |
+| `test_cli.py` | CLI argument parsing, file collection, report writing | ~10 |
 
 ---
 
