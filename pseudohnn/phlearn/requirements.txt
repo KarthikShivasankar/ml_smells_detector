@@ -1,0 +1,11 @@
+networkx>=2.7.1
+numpy>=1.22.3
+torchvision
+scipy>=1.8.0
+torch
+torchaudio
+matplotlib
+imageio
+tqdm
+autograd
+IPython
