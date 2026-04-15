@@ -19,6 +19,13 @@ Running Tests
 
    uv run python -m pytest tests/
 
+Building Docs
+-------------
+
+.. code-block:: bash
+
+   cd docs && uv run sphinx-build -b html source build
+
 Adding a Detector
 -----------------
 
