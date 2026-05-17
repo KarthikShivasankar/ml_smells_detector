@@ -16,6 +16,7 @@ A static analysis CLI tool that detects code smells in Python ML projects — wi
 - [Running Tests](#running-tests)
 - [Building Documentation](#building-documentation)
 - [Publishing to PyPI](#publishing-to-pypi)
+- [Citation](#citation)
 - [License](#license)
 
 ---
@@ -396,6 +397,26 @@ uv pip install --index-url https://test.pypi.org/simple/ ml-code-smell-detector
 ### Bump the version
 
 Edit `version` in `pyproject.toml`, then build and publish again.
+
+---
+
+## Citation
+
+If you use this tool in your research, please cite:
+
+```bibtex
+@inproceedings{shivashankar2025mlscent,
+  title     = {MLScent: A tool for Anti-pattern detection in ML projects},
+  author    = {Shivashankar, Karthik and Martini, Antonio},
+  booktitle = {2025 IEEE/ACM 4th International Conference on AI Engineering--Software Engineering for AI (CAIN)},
+  pages     = {150--160},
+  year      = {2025},
+  month     = {April},
+  publisher = {IEEE}
+}
+```
+
+Shivashankar, K., & Martini, A. (2025, April). MLScent: A tool for Anti-pattern detection in ML projects. In *2025 IEEE/ACM 4th International Conference on AI Engineering–Software Engineering for AI (CAIN)* (pp. 150–160). IEEE.
 
 ---
 
