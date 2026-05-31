@@ -18,10 +18,12 @@ A static analysis CLI tool that detects code smells in Python ML projects — wi
 - [Output](#output)
 - [Detection Scope](#detection-scope)
 - [Detected Smells](#detected-smells)
+- [Development & Maintenance](#development--maintenance)
 - [Running Tests](#running-tests)
 - [Linting](#linting)
-- [Building Documentation](#building-documentation)
+- [Documentation](#documentation)
 - [Continuous Integration](#continuous-integration)
+- [Releasing a New Version](#releasing-a-new-version)
 - [Publishing to PyPI](#publishing-to-pypi)
 - [Citation](#citation)
 - [License](#license)
@@ -313,6 +315,72 @@ The same applies to `pandas`, `numpy`, `torch`, `tensorflow`, and `transformers`
 
 ---
 
+## Development & Maintenance
+
+This section is for contributors and maintainers of the package itself.
+
+### Prerequisites
+
+- [uv](https://docs.astral.sh/uv/) (package/environment manager)
+- Python 3.10+ (CI tests 3.10–3.13)
+
+### Setup
+
+```bash
+git clone https://github.com/KarthikShivasankar/ml_smells_detector
+cd ml_smells_detector
+uv sync --extra dev          # creates .venv and installs the package + dev tools
+```
+
+`uv sync --extra dev` installs everything in `[project.optional-dependencies].dev`
+(pytest, pytest-cov, ruff, flake8, Sphinx, …). Run any tool with `uv run <cmd>`.
+
+### Project layout
+
+```
+ml_code_smell_detector/
+  cli.py                 # CLI entry point: arg parsing, file walking, report writing
+  utils.py               # astroid-based AST helpers (import node types from astroid.nodes)
+  detectors/
+    framework_detector.py    # Pandas / NumPy / sklearn / PyTorch / TensorFlow
+    huggingface_detector.py  # Hugging Face Transformers
+    ml_detector.py           # general ML practices
+tests/                   # pytest suite (mirrors the detectors)
+docs/source/             # Sphinx documentation sources
+.github/workflows/       # CI and release automation
+AGENTS.md                # quick command/convention reference for AI agents
+```
+
+### The development loop
+
+```bash
+uv run ruff check . --fix                       # lint + auto-fix (incl. import order)
+uv run python -m flake8 ml_code_smell_detector tests
+uv run python -m pytest tests/                  # 212 tests
+uv build && uvx twine check dist/*              # sanity-check the package
+```
+
+Keep **both** `ruff check` and `flake8` green, and all tests passing, before
+committing. CI enforces all of this on every push and PR.
+
+### Adding a new smell / detector
+
+1. Add detection logic to the relevant class in `ml_code_smell_detector/detectors/`.
+2. Each smell dict must include the keys: `name`, `framework`, `fix`, `benefits`, `location`.
+3. Add tests under `tests/` for **both** detection and non-detection cases.
+4. Document the new smell in `docs/source/features.rst` and the "Detected Smells" list above.
+5. Run the development loop and open a PR.
+
+### Coding conventions
+
+- Line length: **150** (configured in `.flake8` and `[tool.ruff]`).
+- Target Python 3.10 — do **not** use PEP 701 multi-line f-string expressions
+  (newlines inside `{ ... }`); they are a `SyntaxError` before Python 3.12.
+- Import `astroid` node types from `astroid.nodes` (e.g. `nodes.Call`), not the
+  deprecated top-level `astroid` aliases.
+
+---
+
 ## Running Tests
 
 The test suite has **212 tests** covering all three detector classes, utilities, and the CLI.
@@ -378,15 +446,43 @@ Both linters must pass cleanly before committing. CI runs them on every push and
 
 ---
 
-## Building Documentation
+## Documentation
+
+The docs are built with [Sphinx](https://www.sphinx-doc.org/) from reStructuredText
+sources in `docs/source/` and are hosted on Read the Docs.
+
+### Where to edit
+
+| File | Contents |
+|---|---|
+| `docs/source/index.rst` | Landing page / table of contents |
+| `docs/source/installation.rst` | Install instructions (keep the Python version in sync with `pyproject.toml`) |
+| `docs/source/usage.rst` | CLI usage and options |
+| `docs/source/features.rst` | Full list of detected smells |
+| `docs/source/detectors/*.rst` | Auto-generated API docs for each detector |
+| `docs/source/contributing.rst` | Contributor guide |
+| `docs/source/changelog.rst` | Per-version changelog (update on every release) |
+| `docs/source/conf.py` | Sphinx config — bump `release` on every version bump |
+
+### Build locally
 
 ```bash
 # Windows
 rebuild_docs.bat
 
-# Manual
-cd docs && sphinx-build -b html source build/html
+# Any platform
+uv run sphinx-build -b html docs/source docs/build/html
+# then open docs/build/html/index.html
 ```
+
+> `docs/build/` is generated output and is **git-ignored** — never commit it.
+
+### Published docs
+
+Read the Docs rebuilds automatically on every push to `main` using
+`.readthedocs.yaml` (Python 3.10) and `docs/requirements.txt`. When you change
+the public API or add a detector, update `features.rst` and the relevant
+`detectors/*.rst` so the published docs stay accurate.
 
 ---
 
@@ -399,6 +495,47 @@ GitHub Actions workflows live in `.github/workflows/`:
   - **Test**: full suite across Python 3.10, 3.11, 3.12, and 3.13
   - **Build**: `uv build` + `twine check` to validate the distribution
 - **`publish.yml`** — publishes to PyPI when a GitHub Release is published (see below).
+
+Workflow runs are visible under the repo's **Actions** tab. A red CI run blocks a
+release — fix it before tagging.
+
+---
+
+## Releasing a New Version
+
+Maintainer checklist for cutting a release (uses [semantic versioning](https://semver.org/)):
+
+1. **Make sure `main` is green** — CI passing, `uv run ruff check .`,
+   `uv run python -m flake8 ml_code_smell_detector tests`, and
+   `uv run python -m pytest tests/` all clean locally.
+2. **Bump the version** in `pyproject.toml` (`version = "X.Y.Z"`) and
+   `docs/source/conf.py` (`release = "X.Y.Z"`). Keep them in sync.
+3. **Update the changelog** — add an `X.Y.Z` entry at the top of
+   `docs/source/changelog.rst` describing user-facing changes.
+4. **Commit and push** to `main`:
+   ```bash
+   git commit -am "release: X.Y.Z"
+   git push origin main
+   ```
+5. **Tag and create a GitHub Release** for `vX.Y.Z`. This triggers `publish.yml`,
+   which builds, runs `twine check`, and publishes to PyPI via Trusted Publishing.
+   ```bash
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   # then publish the Release from the tag in the GitHub UI
+   ```
+6. **Verify** the new version appears at
+   <https://pypi.org/project/ml-code-smell-detector/> and installs cleanly:
+   ```bash
+   uv pip install --no-cache ml-code-smell-detector==X.Y.Z
+   ```
+
+> If a release is broken (e.g. fails to import on a supported Python version),
+> **yank** it on PyPI (Manage → Release → Yank) and ship a fixed patch release.
+> Yanking hides it from new installs without deleting it.
+
+See [Publishing to PyPI](#publishing-to-pypi) below for the underlying publish
+mechanics (Trusted Publishing and the manual token fallback).
 
 ---
 
