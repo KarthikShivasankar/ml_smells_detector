@@ -18,6 +18,8 @@ MANIFEST
 venv/
 env/
 .env
+.env.*
+*.env
 
 # UV
 .uv/

@@ -1,6 +1,5 @@
 """Tests for Hugging Face-specific smell detection in HuggingFaceSmellDetector."""
 
-import pytest
 from ml_code_smell_detector.detectors.huggingface_detector import HuggingFaceSmellDetector
 
 

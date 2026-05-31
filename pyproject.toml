@@ -14,9 +14,18 @@ authors = [
 ]
 keywords = ["machine-learning", "code-quality", "static-analysis", "code-smells"]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
@@ -36,8 +45,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/KarthikShivasankar/ml_code_smell_detector"
-Repository = "https://github.com/KarthikShivasankar/ml_code_smell_detector"
+Homepage = "https://github.com/KarthikShivasankar/ml_smells_detector"
+Repository = "https://github.com/KarthikShivasankar/ml_smells_detector"
+"Bug Tracker" = "https://github.com/KarthikShivasankar/ml_smells_detector/issues"
 
 [project.scripts]
 ml_smell_detector = "ml_code_smell_detector.cli:main"
@@ -47,7 +57,3 @@ packages = ["ml_code_smell_detector"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
-[tool.flake8]
-max-line-length = 150
-exclude = [".git", "__pycache__", "build", "dist", "*.egg-info", "docs"]

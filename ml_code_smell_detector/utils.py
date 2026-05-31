@@ -1,5 +1,5 @@
 import os
-import astroid
+from astroid import nodes
 
 
 def ensure_directory_exists(directory):
@@ -70,10 +70,10 @@ def get_imported_modules(node):
     list: A list of imported module names.
     """
     imported_modules = []
-    for import_node in node.nodes_of_class((astroid.Import, astroid.ImportFrom)):
-        if isinstance(import_node, astroid.Import):
+    for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
+        if isinstance(import_node, nodes.Import):
             imported_modules.extend([name for name, _ in import_node.names])
-        elif isinstance(import_node, astroid.ImportFrom):
+        elif isinstance(import_node, nodes.ImportFrom):
             imported_modules.append(import_node.modname)
     return imported_modules
 
@@ -88,7 +88,7 @@ def get_function_names(node):
     Returns:
     list: A list of function names defined in the node.
     """
-    return [func.name for func in node.nodes_of_class(astroid.FunctionDef)]
+    return [func.name for func in node.nodes_of_class(nodes.FunctionDef)]
 
 
 def get_class_names(node):
@@ -101,7 +101,7 @@ def get_class_names(node):
     Returns:
     list: A list of class names defined in the node.
     """
-    return [cls.name for cls in node.nodes_of_class(astroid.ClassDef)]
+    return [cls.name for cls in node.nodes_of_class(nodes.ClassDef)]
 
 
 def get_variable_names(node):
@@ -116,9 +116,9 @@ def get_variable_names(node):
     """
     return [
         assign.targets[0].name for assign in node.nodes_of_class(
-            astroid.Assign) if isinstance(
+            nodes.Assign) if isinstance(
             assign.targets[0],
-            astroid.AssignName)]
+            nodes.AssignName)]
 
 
 def get_call_names(node):
@@ -131,7 +131,7 @@ def get_call_names(node):
     Returns:
     list: A list of function/method call names in the node.
     """
-    return [call.func.as_string() for call in node.nodes_of_class(astroid.Call)]
+    return [call.func.as_string() for call in node.nodes_of_class(nodes.Call)]
 
 
 def get_attribute_names(node):
@@ -144,7 +144,7 @@ def get_attribute_names(node):
     Returns:
     list: A list of attribute names accessed in the node.
     """
-    return [attr.attrname for attr in node.nodes_of_class(astroid.Attribute)]
+    return [attr.attrname for attr in node.nodes_of_class(nodes.Attribute)]
 
 
 def get_constant_values(node):
@@ -157,4 +157,4 @@ def get_constant_values(node):
     Returns:
     list: A list of constant values defined in the node.
     """
-    return [const.value for const in node.nodes_of_class(astroid.Const)]
+    return [const.value for const in node.nodes_of_class(nodes.Const)]

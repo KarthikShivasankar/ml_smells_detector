@@ -1,6 +1,5 @@
 """Tests for general ML smell detection in ML_SmellDetector."""
 
-import os
 import textwrap
 import pytest
 from ml_code_smell_detector.detectors.ml_detector import ML_SmellDetector
@@ -15,7 +14,6 @@ def ml_tmp(tmp_path):
     We work around this by writing to the Desktop or using a path that avoids
     all skip patterns.  Fallback: use the parent of tmp_path.
     """
-    import os
     # Find a safe base directory that contains none of the skip keywords
     skip_patterns = ['test_', 'utils', 'helper', 'preprocess',
                      'data', 'feature', 'transform', 'explore',

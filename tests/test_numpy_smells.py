@@ -1,6 +1,5 @@
 """Tests for NumPy-specific smell detection in FrameworkSpecificSmellDetector."""
 
-import pytest
 from ml_code_smell_detector.detectors.framework_detector import FrameworkSpecificSmellDetector
 
 

@@ -24,7 +24,7 @@ Or with standard pip:
 Requirements
 ------------
 
-- Python 3.9+
+- Python 3.10+
 
 Runtime dependencies (installed automatically):
 

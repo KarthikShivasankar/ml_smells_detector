@@ -22,13 +22,26 @@ Save reports to a custom output directory:
 
    ml_smell_detector analyze path/to/your/directory --output-dir reports/
 
+Skip specific directories during analysis:
+
+.. code-block:: bash
+
+   ml_smell_detector analyze path/to/your/directory --ignore tests notebooks __pycache__
+
+Options
+-------
+
+- ``path`` — path to a ``.py`` file or a directory to analyze.
+- ``--output-dir DIR`` — directory to write reports to (default: ``output/``).
+- ``--ignore DIR [DIR ...]`` — directory names to skip during analysis.
+
 Output
 ------
 
-The tool writes two report files to the output directory (default: current directory):
+The tool writes two report files to the output directory (default: ``output/``):
 
-- ``analysis_report.txt`` — human-readable report grouped by file
-- ``analysis_report.csv`` — machine-readable CSV with columns: ``name``, ``framework``, ``fix``, ``benefits``, ``location``
+- ``analysis_report.txt`` — human-readable report grouped by file and detector category
+- ``analysis_report.csv`` — machine-readable CSV with columns: ``Framework``, ``Smell/Checker Name``, ``How to Fix``, ``Benefits``, ``File Path``, ``Location``, ``Count``
 
 Use Cases
 ---------

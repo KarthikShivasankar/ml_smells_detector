@@ -31,7 +31,7 @@ Install the package:
 
 .. code-block:: bash
 
-   pip install -e .
+   pip install ml-code-smell-detector
 
 Analyze a Python file:
 

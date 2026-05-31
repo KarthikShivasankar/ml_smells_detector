@@ -37,8 +37,8 @@ Adding a Detector
 Code Style
 ----------
 
-- Max line length: 150 characters (configured in ``pyproject.toml``).
-- Run ``flake8`` before submitting: ``uv run flake8 ml_code_smell_detector/``.
+- Max line length: 150 characters (configured in ``.flake8``).
+- Run flake8 before submitting: ``uv run flake8 ml_code_smell_detector tests``.
 
 Submitting Changes
 ------------------

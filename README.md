@@ -47,8 +47,8 @@ pip install ml-code-smell-detector
 ### Development Install
 
 ```bash
-git clone https://github.com/KarthikShivasankar/ml_code_smell_detector
-cd ml_code_smell_detector
+git clone https://github.com/KarthikShivasankar/ml_smells_detector
+cd ml_smells_detector
 uv pip install -e ".[dev]"
 ```
 
