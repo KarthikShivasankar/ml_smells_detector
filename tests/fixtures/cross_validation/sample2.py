@@ -1,6 +1,6 @@
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-import numpy as np
 
 X = np.random.rand(200, 10)
 y = np.random.randint(0, 3, 200)

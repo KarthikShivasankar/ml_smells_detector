@@ -1,8 +1,9 @@
 """Tests for Scikit-learn-specific smell detection in FrameworkSpecificSmellDetector."""
 
-import textwrap
 import tempfile
+import textwrap
 from pathlib import Path
+
 from ml_code_smell_detector.detectors.framework_detector import FrameworkSpecificSmellDetector
 
 

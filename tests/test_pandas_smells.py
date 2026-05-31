@@ -2,10 +2,10 @@
 
 from ml_code_smell_detector.detectors.framework_detector import FrameworkSpecificSmellDetector
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def detect(tmp_py, code):
     detector = FrameworkSpecificSmellDetector()

@@ -1,6 +1,7 @@
 """Shared pytest fixtures for ml_code_smell_detector tests."""
 
 import textwrap
+
 import pytest
 
 

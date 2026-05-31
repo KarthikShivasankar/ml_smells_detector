@@ -1,8 +1,9 @@
+import os
+import sys
+from typing import Any, Dict, List
+
 import astroid
 from astroid import nodes
-from typing import List, Dict, Any
-import sys
-import os
 
 
 class ML_SmellDetector:
@@ -223,9 +224,9 @@ class ML_SmellDetector:
 
         # Only raise warning if multiple different scaling methods are used
         if len(scalers_used) > 1:
+            scalers = ', '.join(scalers_used)
             self.add_smell(
-                f"Inconsistent scaling methods detected: {
-                    ', '.join(scalers_used)}. Consider using the same scaler across the pipeline.",
+                f"Inconsistent scaling methods detected: {scalers}. Consider using the same scaler across the pipeline.",
                 call,
                 file_path)
 

@@ -1,8 +1,9 @@
+import os
+import sys
+from typing import Any, Dict, List
+
 import astroid
 from astroid import nodes
-from typing import List, Dict, Any
-import sys
-import os
 
 
 class FrameworkSpecificSmellDetector:

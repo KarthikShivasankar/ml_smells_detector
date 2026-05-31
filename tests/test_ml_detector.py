@@ -1,7 +1,9 @@
 """Tests for general ML smell detection in ML_SmellDetector."""
 
 import textwrap
+
 import pytest
+
 from ml_code_smell_detector.detectors.ml_detector import ML_SmellDetector
 
 

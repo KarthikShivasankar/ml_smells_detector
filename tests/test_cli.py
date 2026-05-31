@@ -3,20 +3,21 @@
 import csv
 import os
 import textwrap
+
 import pytest
 
 from ml_code_smell_detector.cli import (
     analyze_file,
-    write_txt_report,
-    write_csv_report,
-    collect_python_files,
     build_arg_parser,
+    collect_python_files,
+    write_csv_report,
+    write_txt_report,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def pandas_file(tmp_path):

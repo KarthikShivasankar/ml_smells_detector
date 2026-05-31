@@ -1,6 +1,8 @@
 import os
-from ml_code_smell_detector.detectors.framework_detector import FrameworkSpecificSmellDetector
+
 import astroid
+
+from ml_code_smell_detector.detectors.framework_detector import FrameworkSpecificSmellDetector
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

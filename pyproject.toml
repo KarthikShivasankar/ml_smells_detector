@@ -37,6 +37,7 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "ruff>=0.6",
     "flake8>=6.0",
     "sphinx>=7.0",
     "sphinx-rtd-theme>=2.0",
@@ -57,3 +58,11 @@ packages = ["ml_code_smell_detector"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 150
+target-version = "py310"
+exclude = ["docs", "build", "dist", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]

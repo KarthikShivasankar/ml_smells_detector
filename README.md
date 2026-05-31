@@ -1,5 +1,10 @@
 # ML Code Smell Detector
 
+[![CI](https://github.com/KarthikShivasankar/ml_smells_detector/actions/workflows/ci.yml/badge.svg)](https://github.com/KarthikShivasankar/ml_smells_detector/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/ml-code-smell-detector.svg)](https://pypi.org/project/ml-code-smell-detector/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ml-code-smell-detector.svg)](https://pypi.org/project/ml-code-smell-detector/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A static analysis CLI tool that detects code smells in Python ML projects — without requiring any ML frameworks to be installed. It uses AST-based analysis (via `astroid`) to identify bad practices across Pandas, NumPy, Scikit-learn, PyTorch, TensorFlow, and Hugging Face Transformers.
 
 ---
@@ -14,7 +19,9 @@ A static analysis CLI tool that detects code smells in Python ML projects — wi
 - [Detection Scope](#detection-scope)
 - [Detected Smells](#detected-smells)
 - [Running Tests](#running-tests)
+- [Linting](#linting)
 - [Building Documentation](#building-documentation)
+- [Continuous Integration](#continuous-integration)
 - [Publishing to PyPI](#publishing-to-pypi)
 - [Citation](#citation)
 - [License](#license)
@@ -352,6 +359,25 @@ python -m pytest tests/ --cov=ml_code_smell_detector --cov-report=term-missing
 
 ---
 
+## Linting
+
+The project uses [Ruff](https://docs.astral.sh/ruff/) as the primary linter (and import sorter) and keeps `flake8` available as a secondary check. Both are configured for a 150-character line length (`pyproject.toml` `[tool.ruff]` and `.flake8`).
+
+```bash
+# Lint with Ruff
+uv run ruff check .
+
+# Auto-fix what Ruff can (import order, simple issues)
+uv run ruff check . --fix
+
+# Run flake8 as well
+uv run python -m flake8 ml_code_smell_detector tests
+```
+
+Both linters must pass cleanly before committing. CI runs them on every push and pull request.
+
+---
+
 ## Building Documentation
 
 ```bash
@@ -364,28 +390,61 @@ cd docs && sphinx-build -b html source build/html
 
 ---
 
+## Continuous Integration
+
+GitHub Actions workflows live in `.github/workflows/`:
+
+- **`ci.yml`** — runs on every push and pull request to `main`:
+  - **Lint**: `ruff check` + `flake8`
+  - **Test**: full suite across Python 3.10, 3.11, 3.12, and 3.13
+  - **Build**: `uv build` + `twine check` to validate the distribution
+- **`publish.yml`** — publishes to PyPI when a GitHub Release is published (see below).
+
+---
+
 ## Publishing to PyPI
 
-### Prerequisites
+### Recommended: Trusted Publishing (OIDC, no token)
 
-1. Create an account at [pypi.org](https://pypi.org/account/register/)
-2. Go to **Account Settings → API tokens** and create a token
-3. Store the token — you will only see it once
+This repo ships a `publish.yml` workflow that uploads to PyPI using
+[Trusted Publishing](https://docs.pypi.org/trusted-publishers/) — no API token is
+stored or pasted anywhere.
 
-### Build and publish
+**One-time setup** on the PyPI project page
+(**Settings → Publishing → Add a trusted publisher**):
+
+| Field | Value |
+|---|---|
+| Owner | `KarthikShivasankar` |
+| Repository | `ml_smells_detector` |
+| Workflow name | `publish.yml` |
+| Environment | `pypi` |
+
+**To release a new version:**
+
+1. Bump `version` in `pyproject.toml` and update `docs/source/changelog.rst`.
+2. Commit and push to `main`.
+3. Create a GitHub Release (e.g. tag `v0.1.2`). The `publish.yml` workflow builds,
+   runs `twine check`, and publishes automatically.
+
+### Manual publish (fallback)
 
 ```bash
 # Build sdist and wheel into dist/
 uv build
 
-# Publish (prompts for credentials)
+# Validate, then publish (prompts for credentials)
+uvx twine check dist/*
 uv publish
 
-# Or pass the token directly
+# Or pass a project-scoped token directly
 uv publish --token pypi-<your-token-here>
 ```
 
-### Publish to TestPyPI first (recommended)
+> Prefer a **project-scoped** API token over an account-wide one, and never commit
+> tokens to the repo. Trusted Publishing avoids tokens entirely.
+
+### Publish to TestPyPI first (optional)
 
 ```bash
 uv publish --publish-url https://test.pypi.org/legacy/ --token pypi-<your-test-token>
@@ -393,10 +452,6 @@ uv publish --publish-url https://test.pypi.org/legacy/ --token pypi-<your-test-t
 # Verify the test install
 uv pip install --index-url https://test.pypi.org/simple/ ml-code-smell-detector
 ```
-
-### Bump the version
-
-Edit `version` in `pyproject.toml`, then build and publish again.
 
 ---
 

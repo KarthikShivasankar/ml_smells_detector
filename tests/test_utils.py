@@ -1,28 +1,29 @@
 """Tests for utility functions in ml_code_smell_detector/utils.py."""
 
 import os
-import pytest
+
 import astroid
+import pytest
 
 from ml_code_smell_detector.utils import (
-    ensure_directory_exists,
-    create_sample_file,
-    get_file_extension,
-    is_python_file,
     count_lines,
-    get_imported_modules,
-    get_function_names,
-    get_class_names,
-    get_variable_names,
-    get_call_names,
+    create_sample_file,
+    ensure_directory_exists,
     get_attribute_names,
+    get_call_names,
+    get_class_names,
     get_constant_values,
+    get_file_extension,
+    get_function_names,
+    get_imported_modules,
+    get_variable_names,
+    is_python_file,
 )
-
 
 # ---------------------------------------------------------------------------
 # ensure_directory_exists
 # ---------------------------------------------------------------------------
+
 
 class TestEnsureDirectoryExists:
     def test_creates_new_directory(self, tmp_path):
