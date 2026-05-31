@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 project = 'ML Code Smell Detector'
 copyright = '2026, Karthik Shivashankar'
 author = 'Karthik Shivashankar'
-release = '0.1.1'
+release = '0.1.2'
 
 extensions = [
     'sphinx.ext.autodoc',

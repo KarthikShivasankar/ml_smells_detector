@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.1.2 (2026)
+------------
+
+- Fixed a ``SyntaxError`` on Python 3.10/3.11: ``ML_SmellDetector`` used a
+  multi-line f-string expression (PEP 701) that is only valid on Python 3.12+,
+  which prevented the module from importing on the lower supported versions.
+- Added `Ruff <https://docs.astral.sh/ruff/>`_ as the primary linter and import
+  sorter (configured in ``pyproject.toml``); both ruff and flake8 run clean.
+- Added GitHub Actions CI (lint, a Python 3.10-3.13 test matrix, and a
+  build + ``twine check``).
+- Added a PyPI Trusted Publishing (OIDC) release workflow.
+- Added ``AGENTS.md`` and stopped tracking generated ``docs/build`` artifacts.
+
 0.1.1 (2026)
 ------------
 
