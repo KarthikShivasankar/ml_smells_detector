@@ -332,17 +332,14 @@ class FrameworkSpecificSmellDetector:
         if random_op_calls and not random_seed_calls:
             self.add_smell('NumPy', 'Randomness Control Checker', node, file_path)
 
-    def detect_array_creation(self, node: nodes.Module, file_path: str):
-        """Detect inefficient array creation patterns"""
-        for call in node.nodes_of_class(nodes.Call):
-            # Check for list to array conversion without dtype
-            if ('np.array' in call.func.as_string() and
-                    not any(kw.arg == 'dtype' for kw in call.keywords)):
-                self.add_smell('NumPy', 'Array Creation Efficiency', call, file_path)
+    ARRAY_CONSTRUCTORS = {'numpy.array', 'numpy.zeros', 'numpy.ones', 'numpy.empty'}
 
-            # Check for zeros/ones/empty without dtype
-            if any(func in call.func.as_string() for func in ['np.zeros', 'np.ones', 'np.empty']) and \
-               not any(kw.arg == 'dtype' for kw in call.keywords):
+    def detect_array_creation(self, node: nodes.Module, file_path: str):
+        """Detect array creation without dtype (exact constructors; *_like inherit their argument's dtype)"""
+        import_map = get_import_map(node)
+        for call in node.nodes_of_class(nodes.Call):
+            if (resolve_call_name(call, import_map) in self.ARRAY_CONSTRUCTORS and
+                    not any(kw.arg == 'dtype' for kw in call.keywords)):
                 self.add_smell('NumPy', 'Array Creation Efficiency', call, file_path)
 
     def detect_inefficient_operations(self, node: nodes.Module, file_path: str):
@@ -361,15 +358,23 @@ class FrameworkSpecificSmellDetector:
                 if parent:  # If concatenate is inside a loop
                     self.add_smell('NumPy', 'Inefficient Operations', call, file_path)
 
+    INT_SCALARS = {'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'intc', 'intp'}
+    FLOAT_SCALARS = {'float16', 'float32', 'float64', 'half', 'single', 'double', 'longdouble'}
+
     def detect_dtype_consistency(self, node: nodes.Module, file_path: str):
         """Detect potential dtype inconsistency issues"""
+        import_map = get_import_map(node)
+
+        def scalar_kind(operand):
+            qualname = (resolve_call_name(operand, import_map) or '') if isinstance(operand, nodes.Call) else ''
+            if not qualname.startswith('numpy.'):
+                return None
+            name = qualname.rsplit('.', 1)[-1]
+            return 'int' if name in self.INT_SCALARS else 'float' if name in self.FLOAT_SCALARS else None
+
         for binop in node.nodes_of_class(nodes.BinOp):
-            # Check for mixed integer and float operations
-            if (isinstance(binop.left, nodes.Call) and isinstance(binop.right, nodes.Call) and
-                    'np.' in binop.left.func.as_string() and 'np.' in binop.right.func.as_string()):
-                if ('int' in binop.left.func.as_string() and 'float' in binop.right.func.as_string()) or \
-                   ('float' in binop.left.func.as_string() and 'int' in binop.right.func.as_string()):
-                    self.add_smell('NumPy', 'Dtype Consistency', binop, file_path)
+            if {scalar_kind(binop.left), scalar_kind(binop.right)} == {'int', 'float'}:
+                self.add_smell('NumPy', 'Dtype Consistency', binop, file_path)
 
     def detect_broadcasting_issues(self, node: nodes.Module, file_path: str):
         """Detect potential broadcasting issues"""

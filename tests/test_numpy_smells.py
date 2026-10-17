@@ -76,6 +76,20 @@ class TestRandomnessControlChecker:
 # ---------------------------------------------------------------------------
 
 class TestArrayCreationEfficiency:
+    def test_no_smell_for_non_constructors_and_like_functions(self, tmp_py):
+        # Regression for #6: array_equal/array_split and *_like matched 'np.array'/'np.zeros' as substrings.
+        code = """\
+            import numpy as np
+            a = np.arange(4, dtype=np.int64)
+            same = np.array_equal(a, a)
+            parts = np.array_split(a, 2)
+            z = np.zeros_like(a)
+            o = np.ones_like(a)
+            e = np.empty_like(a)
+        """
+        smells = detect(tmp_py, code)
+        assert "Array Creation Efficiency" not in names(smells)
+
     def test_detects_np_array_without_dtype(self, tmp_py):
         code = """\
             import numpy as np
@@ -240,6 +254,16 @@ class TestDtypeConsistency:
         """
         smells = detect(tmp_py, code)
         assert "Dtype Consistency" in names(smells)
+
+    def test_no_smell_for_names_containing_int(self, tmp_py):
+        # Regression for #6: 'int' as a substring of np.interp is not an integer scalar.
+        code = """\
+            import numpy as np
+            xp = np.arange(3, dtype=np.float64)
+            y = np.interp(1.5, xp, xp) * np.float32(2.0)
+        """
+        smells = detect(tmp_py, code)
+        assert "Dtype Consistency" not in names(smells)
 
 
 # ---------------------------------------------------------------------------
