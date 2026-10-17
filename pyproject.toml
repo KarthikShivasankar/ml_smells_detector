@@ -25,24 +25,27 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
-    "astroid>=2.0",
-    "tqdm>=4.0",
+    "astroid>=3.0",  # nodes.Try (3.0 replaced TryExcept/TryFinally); 3.0.0 is tested, 2.x fails
+    "tqdm>=4.60",
 ]
 
 [project.optional-dependencies]
+# Floors are the oldest versions that still install on Python 3.10; uv.lock pins the newest per Python version
+# (e.g. Sphinx 9.x needs Python 3.12+, so 3.10 resolves to Sphinx 8.x).
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "ruff>=0.6",
-    "flake8>=6.0",
-    "sphinx>=7.0",
-    "sphinx-rtd-theme>=2.0",
-    "sphinx-autodoc-typehints>=2.0",
-    "myst-parser>=3.0",
+    "pytest>=9.1",
+    "pytest-cov>=7.1",
+    "ruff>=0.17",
+    "flake8>=7.4",
+    "sphinx>=8.1",
+    "sphinx-rtd-theme>=3.1",
+    "sphinx-autodoc-typehints>=3.0",
+    "myst-parser>=4.0",
 ]
 
 [project.urls]
@@ -62,7 +65,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 150
 target-version = "py310"
-exclude = ["docs", "build", "dist", ".venv"]
+exclude = ["docs", "build", "dist", ".venv", "tests/corpus"]  # corpus: deliberately smelly code
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

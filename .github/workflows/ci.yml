@@ -18,13 +18,12 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: "3.12"
-          enable-cache: true
 
       - name: Install project (with dev extras)
         run: uv sync --extra dev
@@ -41,30 +40,67 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: ${{ matrix.python-version }}
-          enable-cache: true
 
       - name: Install project (with dev extras)
         run: uv sync --extra dev
 
       - name: Run tests
-        run: uv run python -m pytest tests/ -v
+        run: uv run python -m pytest tests/ -v -rs
+
+  min-deps:
+    name: Test oldest supported dependencies (Python 3.10, astroid 3.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: "3.10"
+
+      - name: Install the declared minimums
+        run: |
+          uv venv
+          uv pip install -e . "astroid==3.0.0" "tqdm==4.60.0" pytest
+
+      - name: Run tests
+        run: .venv/bin/python -m pytest tests/ -q -rs
+
+  docs:
+    name: Docs build (as on Read the Docs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Install docs requirements and the package
+        run: |
+          uv venv
+          uv pip install -r docs/requirements.txt .
+
+      - name: Build HTML, warnings are errors
+        run: .venv/bin/sphinx-build -W --keep-going -b html docs/source docs/build/html
 
   build:
     name: Build & check distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: "3.12"
 
