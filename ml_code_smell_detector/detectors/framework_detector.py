@@ -344,10 +344,15 @@ class FrameworkSpecificSmellDetector:
 
     def detect_inefficient_operations(self, node: nodes.Module, file_path: str):
         """Detect inefficient numerical operations"""
-        for loop in node.nodes_of_class(nodes.For):
-            # Check for element-wise operations in loops
-            if any(op in loop.as_string() for op in ['np.sum', 'np.mean', 'np.max', 'np.min']):
-                self.add_smell('NumPy', 'Inefficient Operations', loop, file_path)
+        # Report the innermost loop around each reduction once (outer loops would duplicate the same call)
+        import_map = get_import_map(node)
+        reported = []
+        for call in node.nodes_of_class(nodes.Call):
+            if resolve_call_name(call, import_map) in ('numpy.sum', 'numpy.mean', 'numpy.max', 'numpy.min'):
+                loop = next((a for a in call.node_ancestors() if isinstance(a, nodes.For)), None)
+                if loop is not None and not any(loop is r for r in reported):
+                    reported.append(loop)
+                    self.add_smell('NumPy', 'Inefficient Operations', loop, file_path)
 
         # Check for inefficient concatenation
         for call in node.nodes_of_class(nodes.Call):

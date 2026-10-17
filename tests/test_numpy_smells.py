@@ -158,6 +158,19 @@ class TestVectorizationOpportunity:
         smells = detect(tmp_py, code)
         assert "Inefficient Operations" in names(smells)
 
+    def test_nested_loops_report_innermost_once(self, tmp_py):
+        # Regression for #7: one np.sum inside nested loops was reported once per enclosing loop.
+        code = """\
+            import numpy as np
+            grid = np.ones((3, 3), dtype=np.float64)
+            for i in range(3):
+                for j in range(3):
+                    print(np.sum(grid[i, j]))
+        """
+        smells = detect(tmp_py, code)
+        lines = [s["line_number"] for s in smells if s["name"] == "Inefficient Operations"]
+        assert lines == [4]
+
 
 # ---------------------------------------------------------------------------
 # Inefficient Concatenation
