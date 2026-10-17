@@ -117,12 +117,13 @@ class HuggingFaceSmellDetector:
             if ('from_pretrained' in call.func.as_string() and
                 ('AutoModel' in call.func.as_string() or
                  'PreTrainedModel' in call.func.as_string())):
-                if not any('@' in arg.as_string() for arg in call.args):
+                # from_pretrained pins a version with revision= (tag, branch or commit); it does not parse 'name@rev'
+                if not any(keyword.arg == 'revision' for keyword in call.keywords):
                     self.add_smell(
                         "Model versioning not specified",
                         "Specify model version when loading pre-trained models",
                         "Ensures consistency and reproducibility of results",
-                        "Use model_name_or_path@revision when loading models (e.g., bert-base-uncased@v1)",
+                        "Pass revision= (a tag or commit hash) to from_pretrained, e.g. from_pretrained(name, revision=\"<commit>\")",
                         call,
                         file_path
                     )

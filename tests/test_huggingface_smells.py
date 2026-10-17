@@ -44,13 +44,23 @@ class TestModelVersioning:
         smells = detect(tmp_py, code)
         assert "Model versioning not specified" in smell_texts(smells)
 
-    def test_no_smell_with_revision_tag(self, tmp_py):
+    def test_no_smell_with_revision_kwarg(self, tmp_py):
+        # Regression for #19: revision= is how transformers pins a model version.
+        code = """\
+            from transformers import AutoModel
+            model = AutoModel.from_pretrained('bert-base-uncased', revision='v1.0')
+        """
+        smells = detect(tmp_py, code)
+        assert "Model versioning not specified" not in smell_texts(smells)
+
+    def test_at_suffix_is_not_a_version_pin(self, tmp_py):
+        # 'name@rev' is not supported by from_pretrained, so it must not clear the finding.
         code = """\
             from transformers import AutoModel
             model = AutoModel.from_pretrained('bert-base-uncased@v1.0')
         """
         smells = detect(tmp_py, code)
-        assert "Model versioning not specified" not in smell_texts(smells)
+        assert "Model versioning not specified" in smell_texts(smells)
 
 
 # ---------------------------------------------------------------------------
