@@ -948,13 +948,13 @@ class FrameworkSpecificSmellDetector:
     def detect_pytorch_lr_scheduler(self, node: nodes.Module, file_path: str):
         # Check if there's a training loop with enough epochs
         has_epochs = False
-        for node in node.nodes_of_class(nodes.For):
-            if 'epoch' in node.as_string().lower():
+        for loop in node.nodes_of_class(nodes.For):  # not `node`: that would shadow the module below
+            if 'epoch' in loop.as_string().lower():
                 try:
                     # Try to determine the number of epochs
-                    if hasattr(node.iter, 'args') and len(node.iter.args) > 0:
-                        epoch_num = int(node.iter.args[0].value)
-                        has_epochs = epoch_num > 10  # Suggest scheduler for longer training
+                    if hasattr(loop.iter, 'args') and len(loop.iter.args) > 0:
+                        epoch_num = int(loop.iter.args[0].value)
+                        has_epochs = has_epochs or epoch_num > 10  # Suggest scheduler for longer training
                 except (AttributeError, ValueError):
                     continue
 
@@ -1342,12 +1342,12 @@ class FrameworkSpecificSmellDetector:
     def detect_tf_lr_scheduler(self, node: nodes.Module, file_path: str):
         # Check if there's a long training process
         has_epochs = False
-        for node in node.nodes_of_class(nodes.For):
-            if 'epoch' in node.as_string().lower():
+        for loop in node.nodes_of_class(nodes.For):  # not `node`: that would shadow the module below
+            if 'epoch' in loop.as_string().lower():
                 try:
-                    if hasattr(node.iter, 'args') and len(node.iter.args) > 0:
-                        epoch_num = int(node.iter.args[0].value)
-                        has_epochs = epoch_num > 5  # Suggest scheduler for longer training
+                    if hasattr(loop.iter, 'args') and len(loop.iter.args) > 0:
+                        epoch_num = int(loop.iter.args[0].value)
+                        has_epochs = has_epochs or epoch_num > 5  # Suggest scheduler for longer training
                 except (AttributeError, ValueError):
                     continue
 

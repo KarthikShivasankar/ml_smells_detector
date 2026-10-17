@@ -318,3 +318,20 @@ class TestTFFrameworkLabel:
         smells = detect(tmp_py, code)
         tf_smells = [s for s in smells if s["framework"] == "TensorFlow"]
         assert len(tf_smells) > 0
+
+
+# ---------------------------------------------------------------------------
+# Learning Rate Scheduler Checker
+# ---------------------------------------------------------------------------
+
+class TestTFLearningRateSchedulerChecker:
+    def test_optimizer_outside_loop_is_seen(self, tmp_py):
+        # Regression for #15: the loop variable shadowed the module node.
+        code = """\
+            import tensorflow as tf
+            opt = tf.keras.optimizers.Adam(1e-3)
+            for epoch in range(20):
+                print(epoch)
+        """
+        smells = detect(tmp_py, code)
+        assert "Learning Rate Scheduler Checker" in names(smells)

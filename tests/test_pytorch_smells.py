@@ -364,6 +364,39 @@ class TestMaskMissingChecker:
 
 
 # ---------------------------------------------------------------------------
+# Learning Rate Scheduler Checker
+# ---------------------------------------------------------------------------
+
+class TestLearningRateSchedulerChecker:
+    def test_optimizer_outside_loop_is_seen(self, tmp_py):
+        # Regression for #15: `for node in node...` shadowed the module, so only the last loop was searched.
+        code = """\
+            import torch
+            model = torch.nn.Linear(2, 1)
+            opt = torch.optim.SGD(model.parameters(), lr=0.1)
+            for epoch in range(50):
+                opt.step()
+            for item in [1, 2]:
+                print(item)
+        """
+        smells = [s for s in detect(tmp_py, code) if s["name"] == "Learning Rate Scheduler Checker"]
+        assert [s["line_number"] for s in smells] == [0]
+
+    def test_no_smell_with_scheduler_outside_loop(self, tmp_py):
+        code = """\
+            import torch
+            model = torch.nn.Linear(2, 1)
+            opt = torch.optim.SGD(model.parameters(), lr=0.1)
+            sched = torch.optim.lr_scheduler.StepLR(opt, step_size=10)
+            for epoch in range(50):
+                opt.step()
+                sched.step()
+        """
+        smells = detect(tmp_py, code)
+        assert "Learning Rate Scheduler Checker" not in names(smells)
+
+
+# ---------------------------------------------------------------------------
 # Framework label
 # ---------------------------------------------------------------------------
 
