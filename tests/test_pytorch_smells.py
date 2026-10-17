@@ -69,6 +69,26 @@ class TestDeterministicAlgorithmChecker:
         smells = detect(tmp_py, code)
         assert "Deterministic Algorithm Usage Checker" not in names(smells)
 
+    def test_no_smell_with_cudnn_deterministic_assignment(self, tmp_py):
+        # Regression for #13: the assignment was never recognised and torch.cuda alone triggered the rule.
+        code = """\
+            import torch
+            torch.manual_seed(0)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        """
+        smells = detect(tmp_py, code)
+        assert "Deterministic Algorithm Usage Checker" not in names(smells)
+
+    def test_device_selection_alone_is_not_a_trigger(self, tmp_py):
+        code = """\
+            import torch
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        """
+        smells = detect(tmp_py, code)
+        assert "Deterministic Algorithm Usage Checker" not in names(smells)
+
 
 # ---------------------------------------------------------------------------
 # Randomness Control Checker (DataLoader with shuffle)

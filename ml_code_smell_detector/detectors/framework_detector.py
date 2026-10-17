@@ -748,9 +748,10 @@ class FrameworkSpecificSmellDetector:
 
     def detect_pytorch_deterministic(self, node: nodes.Module, file_path: str):
         # Check for operations that benefit from deterministic algorithms
+        # torch.cuda alone (e.g. torch.cuda.is_available()) is device selection, not a nondeterministic op
         deterministic_sensitive_ops = [
             'torch.nn.Conv', 'torch.nn.LSTM', 'torch.nn.GRU',
-            'torch.backends.cudnn', 'torch.cuda', 'DataLoader'
+            'torch.backends.cudnn', 'DataLoader'
         ]
 
         has_sensitive_ops = any(
@@ -758,10 +759,14 @@ class FrameworkSpecificSmellDetector:
             for op in deterministic_sensitive_ops
         )
 
+        # cudnn.deterministic is set by assignment, so look at assignment targets as well as calls
         has_deterministic_setting = any(
-            'torch.use_deterministic_algorithms' in call.func.as_string() or
-            'torch.backends.cudnn.deterministic' in call.as_string()
+            'torch.use_deterministic_algorithms' in call.func.as_string()
             for call in node.nodes_of_class(nodes.Call)
+        ) or any(
+            target.as_string() == 'torch.backends.cudnn.deterministic'
+            for assign in node.nodes_of_class(nodes.Assign)
+            for target in assign.targets
         )
 
         # Only report if sensitive operations are used without deterministic setting
