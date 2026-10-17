@@ -1093,8 +1093,10 @@ class FrameworkSpecificSmellDetector:
         )
 
         # Check for training loop with multiple epochs
+        # kw.arg is None for **kwargs; epochs may also be a non-numeric expression
         has_multiple_epochs = any(
-            'epochs' in kw.arg and getattr(kw.value, 'value', 1) > 1
+            kw.arg is not None and 'epochs' in kw.arg and
+            isinstance(getattr(kw.value, 'value', None), (int, float)) and kw.value.value > 1
             for call in node.nodes_of_class(nodes.Call)
             for kw in call.keywords
         )

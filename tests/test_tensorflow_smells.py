@@ -74,6 +74,19 @@ class TestEarlyStoppingChecker:
         smells = detect(tmp_py, code)
         assert "Early Stopping Checker" not in names(smells)
 
+    def test_star_star_kwargs_do_not_abort_checks(self, tmp_py, capsys):
+        # Regression for #14: kw.arg is None for **kwargs, which raised TypeError and skipped all TF checks.
+        code = """\
+            import tensorflow as tf
+            fit_kwargs = {"verbose": 0}
+            model = tf.keras.Sequential([tf.keras.layers.Dense(1)])
+            model.fit([[0.0]], [0.0], **fit_kwargs)
+            model.fit([[0.0]], [0.0], epochs=5)
+        """
+        smells = detect(tmp_py, code)
+        assert "Early Stopping Checker" in names(smells)
+        assert "Error" not in capsys.readouterr().err
+
 
 # ---------------------------------------------------------------------------
 # Checkpointing Checker
