@@ -547,15 +547,17 @@ class FrameworkSpecificSmellDetector:
             if not any(kw.arg == 'random_state' for kw in call.keywords):
                 self.add_smell('ScikitLearn', 'Randomness Control Checker', call, file_path)
 
-    def detect_verbose_mode(self, node: nodes.Module, file_path: str):
-        # Only check for verbose in time-consuming operations
-        time_consuming_ops = [
-            'GridSearchCV', 'RandomizedSearchCV', 'fit',
-            'RandomForest', 'GradientBoosting'
-        ]
+    # Long-running scikit-learn constructors that take a verbose parameter (fit() itself never does)
+    VERBOSE_APIS = {
+        'GridSearchCV', 'RandomizedSearchCV', 'HalvingGridSearchCV', 'HalvingRandomSearchCV',
+        'RandomForestClassifier', 'RandomForestRegressor', 'GradientBoostingClassifier', 'GradientBoostingRegressor',
+    }
 
+    def detect_verbose_mode(self, node: nodes.Module, file_path: str):
+        import_map = get_import_map(node)
         for call in node.nodes_of_class(nodes.Call):
-            if (any(op in call.func.as_string() for op in time_consuming_ops) and
+            qualname = resolve_call_name(call, import_map) or ''
+            if (qualname.startswith('sklearn.') and qualname.rsplit('.', 1)[-1] in self.VERBOSE_APIS and
                     not any(kw.arg == 'verbose' for kw in call.keywords)):
                 self.add_smell('ScikitLearn', 'Verbose Mode Checker', call, file_path)
 
@@ -1527,7 +1529,7 @@ class FrameworkSpecificSmellDetector:
                                 {"name": "Verbose Mode Checker",
                                  "how_to_fix": "Enable verbose mode for long training processes.",
                                  "benefits": "Provides better insights into model training progress.",
-                                 "strategies": "Set verbose=True in scikit-learn estimators with long training times."},
+                                 "strategies": "Pass verbose=1 to search (GridSearchCV, ...) and ensemble constructors; fit() takes no verbose."},
                                 {"name": "Dependent Threshold Checker",
                                  "how_to_fix": "Use threshold-independent metrics alongside threshold-dependent ones.",
                                  "benefits": "Provides a comprehensive evaluation of model performance.",

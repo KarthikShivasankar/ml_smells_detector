@@ -213,6 +213,24 @@ class TestVerboseModeChecker:
         smells = detect(tmp_py, code)
         assert "Verbose Mode Checker" not in names(smells)
 
+    def test_no_smell_for_fit_calls(self, tmp_py):
+        # Regression for #5: fit()/fit_transform() take no verbose argument and must not be reported.
+        code = """\
+            from sklearn.linear_model import LinearRegression
+            from sklearn.preprocessing import StandardScaler
+
+            def fit_summary(m):
+                return str(m)
+
+            scaler = StandardScaler()
+            Xs = scaler.fit_transform([[0], [1]])
+            model = LinearRegression()
+            model.fit(Xs, [0, 1])
+            print(fit_summary(model))
+        """
+        smells = detect(tmp_py, code)
+        assert "Verbose Mode Checker" not in names(smells)
+
 
 # ---------------------------------------------------------------------------
 # Dependent Threshold Checker (only accuracy_score, no AUC etc.)
