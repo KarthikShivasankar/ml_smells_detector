@@ -126,24 +126,34 @@ class TestCheckpointingChecker:
 # ---------------------------------------------------------------------------
 
 class TestMemoryManagementChecker:
-    def test_detects_intensive_ops_without_clear_session(self, tmp_py):
+    def test_detects_models_built_in_a_loop_without_clear_session(self, tmp_py):
+        code = """\
+            import tensorflow as tf
+            for units in [16, 32, 64]:
+                model = tf.keras.Sequential([tf.keras.layers.Dense(units)])
+                model.fit([], [])
+        """
+        smells = detect(tmp_py, code)
+        assert [s["line_number"] for s in smells if s["name"] == "Memory Release Checker"] == [2]
+
+    def test_no_smell_for_a_single_model(self, tmp_py):
         code = """\
             import tensorflow as tf
             model = tf.keras.Sequential([tf.keras.layers.Conv2D(32, 3)])
             model.predict([])
         """
         smells = detect(tmp_py, code)
-        assert "Memory Release Checker" in names(smells)
+        assert "Memory Release Checker" not in names(smells)
 
     def test_no_smell_with_clear_session(self, tmp_py):
         code = """\
             import tensorflow as tf
-            tf.keras.backend.clear_session()
-            model = tf.keras.Sequential([tf.keras.layers.Dense(10)])
-            model.predict([])
+            for units in [16, 32]:
+                tf.keras.backend.clear_session()
+                model = tf.keras.Sequential([tf.keras.layers.Dense(units)])
         """
         smells = detect(tmp_py, code)
-        assert "Memory Management Checker" not in names(smells)
+        assert "Memory Release Checker" not in names(smells)
 
 
 # ---------------------------------------------------------------------------
@@ -335,3 +345,17 @@ class TestTFLearningRateSchedulerChecker:
         """
         smells = detect(tmp_py, code)
         assert "Learning Rate Scheduler Checker" in names(smells)
+
+
+class TestMemoryReleaseLayerLoops:
+    def test_stacking_blocks_in_a_loop_is_one_model(self, tmp_py):
+        code = """\
+            import tensorflow as tf
+            x = tf.keras.Input((8,))
+            for _ in range(4):
+                x = tf.keras.Sequential([tf.keras.layers.Dense(8)])(x)
+            model = tf.keras.Model(x, x)
+            model.fit([], [])
+        """
+        smells = detect(tmp_py, code)
+        assert "Memory Release Checker" not in names(smells)

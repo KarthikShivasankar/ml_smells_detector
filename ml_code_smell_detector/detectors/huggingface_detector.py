@@ -1,9 +1,20 @@
-import os
 import sys
 from typing import Any, Dict, List
 
 import astroid
 from astroid import nodes
+
+from ml_code_smell_detector.utils import (
+    callee_name,
+    get_import_map,
+    is_true,
+    keyword,
+    nodes_of,
+    parse_file,
+    resolve_call_name,
+    run_checks,
+    source,
+)
 
 
 class HuggingFaceSmellDetector:
@@ -13,6 +24,54 @@ class HuggingFaceSmellDetector:
     potential issues and best practices violations related to model training, data processing,
     and performance optimization.
     """
+
+    # smell -> (how to fix, benefits, strategies). The smell text is the rule's stable name (see api.list_rules).
+    RULES = {
+        "Model versioning not specified": (
+            "Specify model version when loading pre-trained models",
+            "Ensures consistency and reproducibility of results",
+            "Pass revision= (a tag or commit hash) to from_pretrained, e.g. from_pretrained(name, revision=\"<commit>\")"),
+        "Tokenizer caching not used": (
+            "Cache tokenizers to avoid re-downloading",
+            "Reduces loading time and network dependency",
+            "Rely on the default Hugging Face cache (HF_HOME or cache_dir); do not pass force_download=True"),
+        "Model caching not used": (
+            "Cache models to avoid re-downloading",
+            "Improves loading efficiency and reduces network dependency",
+            "Rely on the default Hugging Face cache (HF_HOME or cache_dir); do not pass force_download=True"),
+        "Deterministic tokenization settings not specified": (
+            "Use consistent tokenization settings",
+            "Ensures reproducible pre-processing and consistent model inputs",
+            "Pass truncation/padding/max_length explicitly when calling the tokenizer"),
+        "Efficient data loading not detected": (
+            "Use efficient data loading techniques",
+            "Enhances data processing speed and model training efficiency",
+            "Use datasets library for loading and processing data"),
+        "Distributed training not configured": (
+            "Utilize distributed training capabilities",
+            "Speeds up training and leverages multiple GPUs/TPUs",
+            "Configure TrainingArguments with ddp_backend, fsdp, deepspeed or tpu_num_cores, or launch with torchrun/accelerate"),
+        "Mixed precision training not enabled": (
+            "Use mixed precision training to improve performance",
+            "Accelerates training and reduces memory usage",
+            "Enable mixed precision training using fp16=True or bf16=True in TrainingArguments"),
+        "Gradient accumulation not configured": (
+            "Implement gradient accumulation for large batch sizes",
+            "Allows training with larger effective batch sizes and improves convergence",
+            "Set gradient_accumulation_steps in Trainer configuration"),
+        "Learning rate scheduler not detected": (
+            "Use learning rate schedulers to dynamically adjust learning rate",
+            "Optimizes training process and enhances model performance",
+            "Create one with transformers.get_scheduler (or get_linear_schedule_with_warmup) and call scheduler.step(); "
+            "Trainer already applies lr_scheduler_type (default 'linear')"),
+        "Early stopping not implemented": (
+            "Implement early stopping to avoid overfitting",
+            "Prevents overfitting and reduces unnecessary training time",
+            "Pass callbacks=[EarlyStoppingCallback(...)] to Trainer with load_best_model_at_end=True and metric_for_best_model"),
+    }
+
+    # from_pretrained receivers that are not models (configs, tokenizers, processors)
+    NON_MODEL_LOADERS = ('Tokenizer', 'Config', 'Processor', 'FeatureExtractor', 'ImageProcessor')
 
     def __init__(self):
         self.smells: List[Dict[str, Any]] = []
@@ -27,10 +86,7 @@ class HuggingFaceSmellDetector:
             List of dictionaries containing detected code smells and their details.
         """
         try:
-            with open(file_path, 'r') as file:
-                content = file.read()
-            module_name = os.path.splitext(os.path.basename(file_path))[0]
-            module = astroid.parse(content, module_name=module_name)
+            module = parse_file(file_path)
 
             # Check if 'transformers' is imported
             if self.is_framework_used(module, 'transformers'):
@@ -55,7 +111,7 @@ class HuggingFaceSmellDetector:
         Returns:
             True if the framework is imported, False otherwise
         """
-        for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
+        for import_node in nodes_of(node, (nodes.Import, nodes.ImportFrom)):
             if isinstance(import_node, nodes.Import):
                 if any(name.split('.')[0] == framework for name, _ in import_node.names):
                     return True
@@ -71,16 +127,18 @@ class HuggingFaceSmellDetector:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        self.check_model_versioning(node, file_path)
-        self.check_tokenizer_caching(node, file_path)
-        self.check_model_caching(node, file_path)
-        self.check_deterministic_tokenization(node, file_path)
-        self.check_efficient_data_loading(node, file_path)
-        self.check_distributed_training(node, file_path)
-        self.check_mixed_precision_training(node, file_path)
-        self.check_gradient_accumulation(node, file_path)
-        self.check_learning_rate_scheduling(node, file_path)
-        self.check_early_stopping(node, file_path)
+        run_checks((
+            self.check_model_versioning,
+            self.check_tokenizer_caching,
+            self.check_model_caching,
+            self.check_deterministic_tokenization,
+            self.check_efficient_data_loading,
+            self.check_distributed_training,
+            self.check_mixed_precision_training,
+            self.check_gradient_accumulation,
+            self.check_learning_rate_scheduling,
+            self.check_early_stopping,
+        ), node, file_path)
 
     def add_smell(self, smell: str, fix: str, benefits: str, strategies: str, node: nodes.NodeNG, file_path: str):
         """Add a detected code smell to the results.
@@ -99,95 +157,97 @@ class HuggingFaceSmellDetector:
             "benefits": benefits,
             "strategies": strategies,
             "line_number": node.lineno,
-            "code_snippet": node.as_string(),
+            "code_snippet": source(node),
             "file_path": file_path
         })
 
-    def check_model_versioning(self, node: nodes.Module, file_path: str):
-        """Check if model versions are explicitly specified when loading pre-trained models.
+    def _report(self, smell: str, node: nodes.NodeNG, file_path: str):
+        self.add_smell(smell, *self.RULES[smell], node, file_path)
 
-        Detects cases where models are loaded without version tags, which could lead to
-        reproducibility issues.
+    # --- what is being loaded / trained -------------------------------------------------------------
+
+    @staticmethod
+    def _loader_class(call: nodes.Call) -> str:
+        """'AutoModel' for AutoModel.from_pretrained(...), '' if the call is not a from_pretrained."""
+        func = call.func
+        if isinstance(func, nodes.Attribute) and func.attrname == 'from_pretrained':
+            return source(func.expr).rsplit('.', 1)[-1]
+        return ''
+
+    def _is_tokenizer_load(self, call: nodes.Call) -> bool:
+        return 'Tokenizer' in self._loader_class(call)
+
+    def _is_model_load(self, call: nodes.Call) -> bool:
+        cls = self._loader_class(call)
+        return bool(cls) and not any(part in cls for part in self.NON_MODEL_LOADERS)
+
+    @staticmethod
+    def _is_local_path(call: nodes.Call) -> bool:
+        """from_pretrained('./checkpoint') loads a local directory: there is no Hub revision to pin."""
+        arg = call.args[0] if call.args else keyword(call, 'pretrained_model_name_or_path')
+        value = arg.value if isinstance(arg, nodes.Const) and isinstance(arg.value, str) else ''
+        return value.startswith(('.', '/', '~', '\\')) or value[1:3] in (':\\', ':/')  # last: C:\ drive paths
+
+    @staticmethod
+    def _training_args_calls(node: nodes.Module) -> List[nodes.Call]:
+        """TrainingArguments(...) / Seq2SeqTrainingArguments(...) calls, however they are bound."""
+        return [c for c in nodes_of(node, nodes.Call) if callee_name(c).endswith('TrainingArguments')]
+
+    @staticmethod
+    def _passes(call: nodes.Call, names) -> bool:
+        """True if any of ``names`` is passed, or **kwargs (which may carry them)."""
+        return any(kw.arg in names or kw.arg is None for kw in call.keywords)
+
+    # --- checks -------------------------------------------------------------------------------------
+
+    def check_model_versioning(self, node: nodes.Module, file_path: str):
+        """Hub models loaded without revision= (any *Model* class, and pipeline(model=...)). Local paths are skipped.
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        for call in node.nodes_of_class(nodes.Call):
-            if ('from_pretrained' in call.func.as_string() and
-                ('AutoModel' in call.func.as_string() or
-                 'PreTrainedModel' in call.func.as_string())):
-                # from_pretrained pins a version with revision= (tag, branch or commit); it does not parse 'name@rev'
-                if not any(keyword.arg == 'revision' for keyword in call.keywords):
-                    self.add_smell(
-                        "Model versioning not specified",
-                        "Specify model version when loading pre-trained models",
-                        "Ensures consistency and reproducibility of results",
-                        "Pass revision= (a tag or commit hash) to from_pretrained, e.g. from_pretrained(name, revision=\"<commit>\")",
-                        call,
-                        file_path
-                    )
+        import_map = get_import_map(node)
+        for call in nodes_of(node, nodes.Call):
+            # from_pretrained pins a version with revision= (tag, branch or commit); it does not parse 'name@rev'
+            if self._is_model_load(call):
+                if not self._is_local_path(call) and not self._passes(call, ('revision',)):
+                    self._report("Model versioning not specified", call, file_path)
+            elif resolve_call_name(call, import_map) == 'transformers.pipeline':
+                model = keyword(call, 'model')
+                if (isinstance(model, nodes.Const) and isinstance(model.value, str) and
+                        not model.value.startswith(('.', '/', '~')) and not self._passes(call, ('revision',))):
+                    self._report("Model versioning not specified", call, file_path)
 
     @staticmethod
     def _bypasses_cache(call: nodes.Call) -> bool:
         """from_pretrained caches by default; only force_download=True actually disables it."""
-        return any(keyword.arg == 'force_download' and
-                   not (isinstance(keyword.value, nodes.Const) and not keyword.value.value)
-                   for keyword in call.keywords)
+        return is_true(keyword(call, 'force_download'))
 
     def check_tokenizer_caching(self, node: nodes.Module, file_path: str):
-        """Check if tokenizer caching is enabled when loading tokenizers.
-
-        Detects cases where tokenizers are loaded without caching configuration, which
-        could lead to unnecessary re-downloads and slower loading times.
+        """Tokenizers loaded with force_download=True, which bypasses the Hugging Face cache.
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        for call in node.nodes_of_class(nodes.Call):
-            if ('from_pretrained' in call.func.as_string() and
-                ('AutoTokenizer' in call.func.as_string() or
-                 'PreTrainedTokenizer' in call.func.as_string())):
-                if self._bypasses_cache(call):
-                    self.add_smell(
-                        "Tokenizer caching not used",
-                        "Cache tokenizers to avoid re-downloading",
-                        "Reduces loading time and network dependency",
-                        "Rely on the default Hugging Face cache (HF_HOME or cache_dir); do not pass force_download=True",
-                        call,
-                        file_path
-                    )
+        for call in nodes_of(node, nodes.Call):
+            if self._is_tokenizer_load(call) and self._bypasses_cache(call):
+                self._report("Tokenizer caching not used", call, file_path)
 
     def check_model_caching(self, node: nodes.Module, file_path: str):
-        """Check if model caching is enabled when loading models.
-
-        Detects cases where models are loaded without caching configuration, which
-        could lead to unnecessary re-downloads and slower loading times.
+        """Models loaded with force_download=True, which bypasses the Hugging Face cache.
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        for call in node.nodes_of_class(nodes.Call):
-            if ('from_pretrained' in call.func.as_string() and
-                ('AutoModel' in call.func.as_string() or
-                 'PreTrainedModel' in call.func.as_string())):
-                if self._bypasses_cache(call):
-                    self.add_smell(
-                        "Model caching not used",
-                        "Cache models to avoid re-downloading",
-                        "Improves loading efficiency and reduces network dependency",
-                        "Rely on the default Hugging Face cache (HF_HOME or cache_dir); do not pass force_download=True",
-                        call,
-                        file_path
-                    )
+        for call in nodes_of(node, nodes.Call):
+            if self._is_model_load(call) and self._bypasses_cache(call):
+                self._report("Model caching not used", call, file_path)
 
     def check_deterministic_tokenization(self, node: nodes.Module, file_path: str):
         """Check if tokenization parameters are explicitly specified.
-
-        Detects cases where tokenization settings are not explicitly defined,
-        which could lead to inconsistent preprocessing across runs.
 
         Args:
             node: AST node representing the module
@@ -197,38 +257,28 @@ class HuggingFaceSmellDetector:
         # any call count. ponytail: module-level evidence; track the tokenizer variable if this proves too lax.
         call_time_params = {'truncation', 'padding', 'max_length'}
         if any(keyword.arg in call_time_params
-               for call in node.nodes_of_class(nodes.Call) for keyword in call.keywords):
+               for call in nodes_of(node, nodes.Call) for keyword in call.keywords):
             return
-        for call in node.nodes_of_class(nodes.Call):
-            if ('from_pretrained' in call.func.as_string() and
-                ('AutoTokenizer' in call.func.as_string() or
-                 'PreTrainedTokenizer' in call.func.as_string())):
-                deterministic_params = [
-                    'do_lower_case', 'strip_accents', 'truncation',
-                    'padding', 'max_length', 'return_tensors'
-                ]
-                if not any(keyword.arg in deterministic_params for keyword in call.keywords):
-                    self.add_smell(
-                        "Deterministic tokenization settings not specified",
-                        "Use consistent tokenization settings",
-                        "Ensures reproducible pre-processing and consistent model inputs",
-                        "Pass truncation/padding/max_length explicitly when calling the tokenizer",
-                        call,
-                        file_path
-                    )
+        deterministic_params = ('do_lower_case', 'strip_accents', 'truncation', 'padding', 'max_length', 'return_tensors')
+        for call in nodes_of(node, nodes.Call):
+            if self._is_tokenizer_load(call) and not self._passes(call, deterministic_params):
+                self._report("Deterministic tokenization settings not specified", call, file_path)
 
     def check_efficient_data_loading(self, node: nodes.Module, file_path: str):
-        """Check if efficient data loading techniques are being used.
+        """Training code that does not use the datasets library or a DataLoader.
 
-        Detects cases where standard data loading is used instead of optimized
-        methods like datasets library or DataLoader.
+        Inference-only scripts are not reported: there is no training data to stream.
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        datasets_imported = any('datasets' in import_node.names[0][0]
-                                for import_node in node.nodes_of_class(nodes.ImportFrom))
+        if not self._has_training_code(node):
+            return
+        datasets_imported = any(
+            isinstance(imp, nodes.ImportFrom) and imp.modname.split('.')[0] == 'datasets' or
+            isinstance(imp, nodes.Import) and any(name.split('.')[0] == 'datasets' for name, _ in imp.names)
+            for imp in nodes_of(node, (nodes.Import, nodes.ImportFrom)))
 
         efficient_patterns = [
             'load_dataset',
@@ -238,202 +288,85 @@ class HuggingFaceSmellDetector:
         ]
 
         has_efficient_loading = any(
-            pattern in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            pattern in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for pattern in efficient_patterns
         )
 
         if not (datasets_imported or has_efficient_loading):
-            self.add_smell(
-                "Efficient data loading not detected",
-                "Use efficient data loading techniques",
-                "Enhances data processing speed and model training efficiency",
-                "Use datasets library for loading and processing data",
-                node,
-                file_path
-            )
+            self._report("Efficient data loading not detected", node, file_path)
+
+    DISTRIBUTED_SETTINGS = ('local_rank', 'ddp_backend', 'ddp_find_unused_parameters', 'fsdp', 'fsdp_config',
+                            'deepspeed', 'tpu_num_cores', 'accelerator_config')
 
     def check_distributed_training(self, node: nodes.Module, file_path: str):
-        """Check if distributed training is configured when using training functionality.
-
-        Detects cases where training code is present but distributed training
-        settings are not configured.
+        """TrainingArguments without any distributed setting (DDP, FSDP, DeepSpeed, TPU).
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        # Check if training-related imports exist
-        has_training_imports = any(
-            'Trainer' in import_node.names[0][0] or 'TrainingArguments' in import_node.names[0][0]
-            for import_node in node.nodes_of_class(nodes.ImportFrom)
-        )
-
-        if not has_training_imports:
-            return  # Skip if no training-related imports
-
-        distributed_config = False
-        for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
-                if any(keyword.arg in ['local_rank', 'n_gpu', 'distributed_training', 'tpu_num_cores']
-                       for keyword in assign.value.keywords):
-                    distributed_config = True
-                    break
-
-        # Only report if TrainingArguments is used but without distributed config
-        if not distributed_config and self._has_training_arguments(node):
-            self.add_smell(
-                "Distributed training not configured",
-                "Utilize distributed training capabilities",
-                "Speeds up training and leverages multiple GPUs/TPUs",
-                "Configure Trainer with distributed settings using local_rank, n_gpu, or tpu_num_cores",
-                node,
-                file_path
-            )
-
-    def _has_training_arguments(self, node: nodes.Module) -> bool:
-        """Helper method to check if TrainingArguments is actually used in the code"""
-        return any(
-            isinstance(assign.targets[0], nodes.AssignName) and
-            assign.targets[0].name == 'TrainingArguments'
-            for assign in node.nodes_of_class(nodes.Assign)
-        )
+        for call in self._training_args_calls(node):
+            if not self._passes(call, self.DISTRIBUTED_SETTINGS):
+                self._report("Distributed training not configured", call, file_path)
 
     def check_mixed_precision_training(self, node: nodes.Module, file_path: str):
-        """Check if mixed precision training is enabled.
-
-        Detects cases where training is performed without mixed precision settings,
-        which could lead to suboptimal performance and memory usage.
+        """TrainingArguments without fp16/bf16 (a non-literal value such as fp16=USE_AMP counts as set).
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        if not self._has_training_arguments(node):
-            return  # Skip if no TrainingArguments used
-
-        fp16_used = False
-        for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
-                if any((keyword.arg == 'fp16' and keyword.value.value) or
-                       (keyword.arg == 'bf16' and keyword.value.value) or
-                       keyword.arg == 'half_precision_backend'
-                       for keyword in assign.value.keywords):
-                    fp16_used = True
-                    break
-
-        if not fp16_used:
-            self.add_smell(
-                "Mixed precision training not enabled",
-                "Use mixed precision training to improve performance",
-                "Accelerates training and reduces memory usage",
-                "Enable mixed precision training using fp16=True or bf16=True in TrainingArguments",
-                node,
-                file_path
-            )
+        for call in self._training_args_calls(node):
+            if not (is_true(keyword(call, 'fp16')) or is_true(keyword(call, 'bf16')) or
+                    self._passes(call, ('half_precision_backend', 'fp16_opt_level'))):
+                self._report("Mixed precision training not enabled", call, file_path)
 
     def check_gradient_accumulation(self, node: nodes.Module, file_path: str):
-        """Check if gradient accumulation is configured for training.
-
-        Detects cases where training is performed without gradient accumulation,
-        which could be beneficial for handling larger effective batch sizes.
+        """TrainingArguments without gradient_accumulation_steps > 1.
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        # Skip if no TrainingArguments used
-        if not self._has_training_arguments(node):
-            return
+        for call in self._training_args_calls(node):
+            steps = keyword(call, 'gradient_accumulation_steps')
+            configured = (steps is not None and not (isinstance(steps, nodes.Const) and steps.value in (0, 1)) or
+                          any(kw.arg is None for kw in call.keywords))
+            if not configured:
+                self._report("Gradient accumulation not configured", call, file_path)
 
-        gradient_accumulation = False
-        for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
-                if any(keyword.arg == 'gradient_accumulation_steps' and keyword.value.value > 1
-                       for keyword in assign.value.keywords):
-                    gradient_accumulation = True
-                    break
-
-        # Only report if training configuration is present but gradient accumulation isn't
-        if not gradient_accumulation and self._has_training_code(node):
-            self.add_smell(
-                "Gradient accumulation not configured",
-                "Implement gradient accumulation for large batch sizes",
-                "Allows training with larger effective batch sizes and improves convergence",
-                "Set gradient_accumulation_steps in Trainer configuration",
-                node,
-                file_path
-            )
+    SCHEDULER_HINTS = ('get_scheduler', 'schedule', 'lr_scheduler', 'LRScheduler', 'OneCycleLR', 'StepLR', 'ReduceLROnPlateau')
 
     def check_learning_rate_scheduling(self, node: nodes.Module, file_path: str):
-        """Check if learning rate scheduling is configured.
+        """A custom training loop (loss.backward() + optimizer.step()) without a learning-rate scheduler.
 
-        Detects cases where training is performed without learning rate scheduling,
-        which could lead to suboptimal training dynamics.
+        Trainer is not reported: it always applies TrainingArguments.lr_scheduler_type (default 'linear').
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        # Skip if no TrainingArguments used
-        if not self._has_training_arguments(node):
+        calls = list(nodes_of(node, nodes.Call))
+        backward = next((c for c in calls if callee_name(c) == 'backward'), None)
+        has_step = any(callee_name(c) == 'step' for c in calls)
+        if backward is None or not has_step:
             return
-
-        lr_scheduler_used = False
-        for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
-                if any(keyword.arg in ['learning_rate_scheduler', 'lr_scheduler_type']
-                       for keyword in assign.value.keywords):
-                    lr_scheduler_used = True
-                    break
-
-        # Only report if training configuration is present but lr scheduler isn't
-        if not lr_scheduler_used and self._has_training_code(node):
-            self.add_smell(
-                "Learning rate scheduler not detected",
-                "Use learning rate schedulers to dynamically adjust learning rate",
-                "Optimizes training process and enhances model performance",
-                "Configure lr_scheduler_type in TrainingArguments or use transformers built-in schedulers",
-                node,
-                file_path
-            )
+        if not any(hint in source(c.func) for c in calls for hint in self.SCHEDULER_HINTS):
+            self._report("Learning rate scheduler not detected", backward, file_path)
 
     def check_early_stopping(self, node: nodes.Module, file_path: str):
-        """Check if early stopping is implemented in training.
-
-        Detects cases where training code is present but early stopping
-        mechanisms are not configured, which could lead to overfitting.
+        """Trainer-based training without an EarlyStoppingCallback.
 
         Args:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        # Skip if no training-related code is present
-        if not self._has_training_code(node):
+        trainers = [c for c in nodes_of(node, nodes.Call) if callee_name(c).endswith('Trainer')]
+        if not trainers:
             return
-
-        early_stopping_used = False
-        for call in node.nodes_of_class(nodes.Call):
-            if 'EarlyStoppingCallback' in call.func.as_string():
-                early_stopping_used = True
-                break
-
-        # Also check TrainingArguments for early_stopping_* parameters
-        for assign in node.nodes_of_class(nodes.Assign):
-            if isinstance(assign.targets[0], nodes.AssignName) and assign.targets[0].name == 'TrainingArguments':
-                if any(keyword.arg.startswith('early_stopping_') for keyword in assign.value.keywords):
-                    early_stopping_used = True
-                    break
-
-        if not early_stopping_used:
-            self.add_smell(
-                "Early stopping not implemented",
-                "Implement early stopping to avoid overfitting",
-                "Prevents overfitting and reduces unnecessary training time",
-                "Use EarlyStoppingCallback or configure early_stopping parameters in TrainingArguments",
-                node,
-                file_path
-            )
+        if not any('EarlyStoppingCallback' in source(call.func) for call in nodes_of(node, nodes.Call)):
+            self._report("Early stopping not implemented", trainers[0], file_path)
 
     def _has_training_code(self, node: nodes.Module) -> bool:
         """Helper method to check if the code contains training-related elements"""
@@ -449,15 +382,15 @@ class HuggingFaceSmellDetector:
         # Check imports
         has_training_imports = any(
             any(indicator in name for name, _ in import_node.names)
-            for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom))
+            for import_node in nodes_of(node, (nodes.Import, nodes.ImportFrom))
             for indicator in training_indicators
         )
 
         # Check function calls and assignments
         has_training_usage = any(
-            any(indicator in node_item.as_string()
+            any(indicator in source(node_item)
                 for indicator in training_indicators)
-            for node_item in node.nodes_of_class((nodes.Call, nodes.Assign))
+            for node_item in nodes_of(node, (nodes.Call, nodes.Assign))
         )
 
         return has_training_imports or has_training_usage

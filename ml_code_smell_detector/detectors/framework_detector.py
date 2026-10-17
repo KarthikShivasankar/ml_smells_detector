@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
@@ -7,7 +6,18 @@ import astroid
 from astroid import nodes
 from astroid.const import Context
 
-from ml_code_smell_detector.utils import get_import_map, resolve_call_name
+from ml_code_smell_detector.utils import (
+    callee_name,
+    get_import_map,
+    in_loop,
+    int_value,
+    keyword,
+    nodes_of,
+    parse_file,
+    resolve_call_name,
+    run_checks,
+    source,
+)
 
 
 class FrameworkSpecificSmellDetector:
@@ -40,10 +50,7 @@ class FrameworkSpecificSmellDetector:
             - file_path: Path to the file containing the smell
         """
         try:
-            with open(file_path, 'r') as file:
-                content = file.read()
-            module_name = os.path.splitext(os.path.basename(file_path))[0]
-            module = astroid.parse(content, module_name=module_name)
+            module = parse_file(file_path)
 
             if not module:
                 print(f"Error: Could not parse module for {file_path}", file=sys.stderr)
@@ -88,7 +95,7 @@ class FrameworkSpecificSmellDetector:
         }
 
         try:
-            for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
+            for import_node in nodes_of(node, (nodes.Import, nodes.ImportFrom)):
                 if isinstance(import_node, nodes.Import):
                     for name, _ in import_node.names:
                         root = name.split('.')[0]
@@ -143,7 +150,7 @@ class FrameworkSpecificSmellDetector:
                 "benefits": smell['benefits'],
                 "strategies": smell['strategies'],
                 "line_number": node.lineno,
-                "code_snippet": node.as_string(),
+                "code_snippet": source(node),
                 "file_path": file_path
             })
 
@@ -163,119 +170,125 @@ class FrameworkSpecificSmellDetector:
             node: AST node representing the Python module
             file_path: Path to the file being analyzed
         """
-        self.detect_iterrows_usage(node, file_path)
-        self.detect_chain_indexing(node, file_path)
-        self.detect_merge_parameters(node, file_path)
-        self.detect_inplace_operations(node, file_path)
-        self.detect_values_usage(node, file_path)
-        self.detect_dtype_specification(node, file_path)
-        self.detect_column_selection(node, file_path)
-        self.detect_dataframe_modification(node, file_path)
+        run_checks((
+            self.detect_iterrows_usage,
+            self.detect_chain_indexing,
+            self.detect_merge_parameters,
+            self.detect_inplace_operations,
+            self.detect_values_usage,
+            self.detect_dtype_specification,
+            self.detect_column_selection,
+            self.detect_dataframe_modification,
+        ), node, file_path)
 
     def detect_iterrows_usage(self, node: nodes.Module, file_path: str):
         # Only flag iterrows if better alternatives could be used
         vectorizable_operations = ['sum', 'mean', 'max', 'min', 'apply', 'map']
-        for call in node.nodes_of_class(nodes.Call):
-            if 'iterrows' in call.func.as_string():
+        for call in nodes_of(node, nodes.Call):
+            if 'iterrows' in source(call.func):
                 # Check if the iterrows is used within a loop
                 parent = call.parent
                 while parent and not isinstance(parent, nodes.For):
                     parent = parent.parent
-                if parent and any(op in parent.as_string() for op in vectorizable_operations):
+                if parent and any(op in source(parent) for op in vectorizable_operations):
                     self.add_smell('Pandas', 'Unnecessary Iteration', call, file_path)
 
     def detect_chain_indexing(self, node: nodes.Module, file_path: str):
-        for subscript in node.nodes_of_class(nodes.Subscript):
+        for subscript in nodes_of(node, nodes.Subscript):
             if isinstance(subscript.value, nodes.Subscript):
                 # Only flag if it's not within a with pd.option_context block
                 parent = subscript.parent
                 while parent and not isinstance(parent, nodes.With):
                     parent = parent.parent
-                if not parent or 'option_context' not in parent.as_string():
-                    # Only chained assignment/deletion (df['a'][0] = v) is the smell; chained reads are fine
-                    if subscript.ctx != Context.Load:
+                if not parent or 'option_context' not in source(parent):
+                    # Only chained assignment/deletion (df['a'][0] = v, df[mask]['a'] = v) is the smell; chained
+                    # reads are fine. A column label on either side tells it apart from nested lists (grid[i][j] = v).
+                    if subscript.ctx != Context.Load and any(
+                            isinstance(s, nodes.Const) and isinstance(s.value, str)
+                            for s in (subscript.slice, subscript.value.slice)):
                         self.add_smell('Pandas', 'Chain Indexing', subscript, file_path)
 
+    MERGE_KEYWORDS = {'how', 'on', 'left_on', 'right_on', 'left_index', 'right_index', 'validate'}
+
     def detect_merge_parameters(self, node: nodes.Module, file_path: str):
-        for call in node.nodes_of_class(nodes.Call):
-            if ('merge' in call.func.as_string() and
-                isinstance(call.func, nodes.Attribute) and
-                # Check if it's actually a pandas merge
-                ('pd' in call.func.expr.as_string() or 'pandas' in call.func.expr.as_string()) and
-                    not any(kw.arg in ['how', 'on', 'validate'] for kw in call.keywords)):
+        # pd.merge(a, b) and the (more common) a.merge(b); merges resolved to another module (heapq.merge) are not pandas
+        import_map = get_import_map(node)
+        for call in nodes_of(node, nodes.Call):
+            if callee_name(call) != 'merge' or not isinstance(call.func, nodes.Attribute):
+                continue
+            qualname = resolve_call_name(call, import_map)
+            if qualname and not qualname.startswith('pandas.'):
+                continue
+            if not any(kw.arg in self.MERGE_KEYWORDS or kw.arg is None for kw in call.keywords):
                 self.add_smell('Pandas', 'Merge Parameter Checker', call, file_path)
 
     def detect_inplace_operations(self, node: nodes.Module, file_path: str):
-        inplace_operations = ['sort_values', 'fillna', 'drop', 'replace', 'rename']
-        for call in node.nodes_of_class(nodes.Call):
-            if ('inplace=True' in call.as_string() and
-                    any(op in call.func.as_string() for op in inplace_operations)):
-                # Check if the result is used later
-                parent = call.parent
-                while parent and not isinstance(parent, nodes.Module):
-                    if isinstance(parent, nodes.Assign):
-                        break
-                    parent = parent.parent
-                if not isinstance(parent, nodes.Assign):
-                    self.add_smell('Pandas', 'InPlace Checker', call, file_path)
+        # Every inplace=True is reported; `df2 = df.dropna(inplace=True)` is the worst case (df2 is None)
+        for call in nodes_of(node, nodes.Call):
+            value = keyword(call, 'inplace')
+            if isinstance(value, nodes.Const) and value.value is True:
+                self.add_smell('Pandas', 'InPlace Checker', call, file_path)
 
     def detect_values_usage(self, node: nodes.Module, file_path: str):
         # The `.values` attribute (not the dict.values() method), reported once, when used in a numpy context
         numpy_contexts = ['np.', 'array', 'asarray', 'reshape', 'transpose']
-        for attr in node.nodes_of_class(nodes.Attribute):
+        for attr in nodes_of(node, nodes.Attribute):
             if attr.attrname != 'values' or (isinstance(attr.parent, nodes.Call) and attr.parent.func is attr):
                 continue
-            if any(isinstance(anc, nodes.Call) and any(ctx in anc.func.as_string() for ctx in numpy_contexts)
+            if any(isinstance(anc, nodes.Call) and any(ctx in source(anc.func) for ctx in numpy_contexts)
                    for anc in attr.node_ancestors()):
                 self.add_smell('Pandas', 'DataFrame Conversion Checker', attr, file_path)
 
+    DTYPE_SENSITIVE_OPS = {'groupby', 'merge', 'sort_values', 'pivot_table', 'astype'}
+
     def detect_dtype_specification(self, node: nodes.Module, file_path: str):
-        for call in node.nodes_of_class(nodes.Call):
-            if ('read_csv' in call.func.as_string() and
-                # Check if it's actually pandas read_csv
-                ('pd' in call.func.as_string() or 'pandas' in call.func.as_string()) and
-                    not any(kw.arg in ['dtype', 'parse_dates'] for kw in call.keywords)):
-                # Check if the DataFrame is used in operations sensitive to dtypes
-                parent = call.parent
-                dtype_sensitive_ops = ['groupby', 'merge', 'join', 'sort_values', 'arithmetic_operations']
-                while parent and not isinstance(parent, nodes.Module):
-                    if any(op in parent.as_string() for op in dtype_sensitive_ops):
-                        self.add_smell('Pandas', 'Datatype Checker', call, file_path)
-                        break
-                    parent = parent.parent
+        # pd.read_csv without dtype=, in a module that then does dtype-sensitive work (grouping, merging, sorting)
+        import_map = get_import_map(node)
+        if not any(callee_name(c) in self.DTYPE_SENSITIVE_OPS for c in nodes_of(node, nodes.Call)):
+            return
+        for call in nodes_of(node, nodes.Call):
+            if (resolve_call_name(call, import_map) == 'pandas.read_csv' and
+                    not any(kw.arg in ('dtype', 'parse_dates', 'converters') or kw.arg is None for kw in call.keywords)):
+                self.add_smell('Pandas', 'Datatype Checker', call, file_path)
+
+    PANDAS_READERS = {'read_csv', 'read_table', 'read_excel', 'read_parquet', 'read_feather', 'read_sql', 'read_sql_table'}
 
     def detect_column_selection(self, node: nodes.Module, file_path: str):
-        # Only check if there are actual DataFrame operations
-        df_operations = False
-        column_selections = False
+        # A file read without usecols/columns whose columns are never narrowed down afterwards (df[['a', 'b']])
+        import_map = get_import_map(node)
+        selects_columns = any(
+            isinstance(s.slice, nodes.List) or isinstance(s.slice, nodes.Tuple) and any(isinstance(e, nodes.List) for e in s.slice.elts)
+            for s in nodes_of(node, nodes.Subscript)
+        ) or any(callee_name(c) in ('filter', 'reindex') for c in nodes_of(node, nodes.Call))
+        if selects_columns:
+            return
+        for call in nodes_of(node, nodes.Call):
+            qualname = resolve_call_name(call, import_map) or ''
+            if (qualname.startswith('pandas.') and qualname.rsplit('.', 1)[-1] in self.PANDAS_READERS and
+                    not any(kw.arg in ('usecols', 'columns') or kw.arg is None for kw in call.keywords)):
+                self.add_smell('Pandas', 'Column Selection Checker', call, file_path)
 
-        for subscript in node.nodes_of_class(nodes.Subscript):
-            if isinstance(subscript.value, nodes.Name):
-                # Look for DataFrame operations
-                if any(op in node.as_string() for op in ['DataFrame', 'pd.', 'pandas']):
-                    df_operations = True
-                    if '[[' in subscript.as_string():
-                        column_selections = True
-                        break
-
-        if df_operations and not column_selections:
-            self.add_smell('Pandas', 'Column Selection Checker', node, file_path)
+    ROW_ITERATORS = {'iterrows', 'itertuples'}
 
     def detect_dataframe_modification(self, node: nodes.Module, file_path: str):
-        for assign in node.nodes_of_class(nodes.Assign):
-            if (isinstance(assign.targets[0], nodes.Subscript) and
-                    isinstance(assign.targets[0].value, nodes.Name)):
-                # Check if it's within a loop and modifying a DataFrame
-                parent = assign.parent
-                while parent and not isinstance(parent, nodes.For):
-                    parent = parent.parent
-
-                # Check if it's actually a DataFrame modification
-                df_indicators = ['DataFrame', 'pd.', 'pandas']
-                if (parent and
-                    any(indicator in assign.as_string() for indicator in df_indicators) and
-                        not any(safe_op in assign.as_string() for safe_op in ['loc', 'iloc', 'at', 'iat'])):
-                    self.add_smell('Pandas', 'DataFrame Iteration Modification', assign, file_path)
+        # Writing to the frame being iterated (df.loc[i, 'a'] = v inside `for i, row in df.iterrows()`), or to
+        # the row copy (row['a'] = v, which silently has no effect on df)
+        for loop in nodes_of(node, nodes.For):
+            it = loop.iter
+            if not (isinstance(it, nodes.Call) and isinstance(it.func, nodes.Attribute) and it.func.attrname in self.ROW_ITERATORS):
+                continue
+            frame = source(it.func.expr)
+            rows = {n.name for n in nodes_of(loop.target, nodes.AssignName)} if loop.target else set()
+            for stmt in nodes_of(loop, (nodes.Assign, nodes.AugAssign)):
+                targets = stmt.targets if isinstance(stmt, nodes.Assign) else [stmt.target]
+                for target in targets:
+                    if not isinstance(target, nodes.Subscript):
+                        continue
+                    base = target.value
+                    if isinstance(base, nodes.Attribute) and base.attrname in ('loc', 'iloc', 'at', 'iat'):
+                        base = base.expr
+                    if source(base) == frame or (isinstance(base, nodes.Name) and base.name in rows):
+                        self.add_smell('Pandas', 'DataFrame Iteration Modification', stmt, file_path)
 
     # NumPy Detection Methods
     def detect_numpy_smells(self, node: nodes.Module, file_path: str):
@@ -293,55 +306,70 @@ class FrameworkSpecificSmellDetector:
             node: AST node representing the Python module
             file_path: Path to the file being analyzed
         """
-        self.detect_nan_equality(node, file_path)
-        self.detect_random_seed(node, file_path)
-        self.detect_array_creation(node, file_path)
-        self.detect_inefficient_operations(node, file_path)
-        self.detect_dtype_consistency(node, file_path)
-        self.detect_broadcasting_issues(node, file_path)
-        self.detect_copy_view_issues(node, file_path)
-        self.detect_axis_specification(node, file_path)
+        run_checks((
+            self.detect_nan_equality,
+            self.detect_random_seed,
+            self.detect_array_creation,
+            self.detect_inefficient_operations,
+            self.detect_dtype_consistency,
+            self.detect_broadcasting_issues,
+            self.detect_copy_view_issues,
+            self.detect_axis_specification,
+        ), node, file_path)
+
+    NAN_NAMES = {'numpy.nan', 'numpy.NaN', 'numpy.NAN', 'math.nan', 'pandas.NA'}
 
     def detect_nan_equality(self, node: nodes.Module, file_path: str):
-        for compare in node.nodes_of_class(nodes.Compare):
-            if any('np.nan' in getattr(op[1], 'as_string', lambda: '')() for op in compare.ops):
+        # x == np.nan is always False (and != always True); either side, and also float('nan')
+        import_map = get_import_map(node)
+
+        def is_nan(operand):
+            if isinstance(operand, nodes.Call):
+                return (isinstance(operand.func, nodes.Name) and operand.func.name == 'float' and len(operand.args) == 1 and
+                        isinstance(operand.args[0], nodes.Const) and str(operand.args[0].value).lower() == 'nan')
+            parts = []
+            while isinstance(operand, nodes.Attribute):
+                parts.append(operand.attrname)
+                operand = operand.expr
+            if not isinstance(operand, nodes.Name) or operand.name not in import_map:
+                return False
+            return '.'.join([import_map[operand.name]] + parts[::-1]) in self.NAN_NAMES
+
+        for compare in nodes_of(node, nodes.Compare):
+            operands = [compare.left] + [right for _, right in compare.ops]
+            if any(op in ('==', '!=') for op, _ in compare.ops) and any(is_nan(o) for o in operands):
                 self.add_smell('NumPy', 'NaN Equality Checker', compare, file_path)
 
+    # numpy.random functions that do not draw from the global generator
+    NUMPY_RANDOM_NON_DRAWS = {'seed', 'default_rng', 'RandomState', 'Generator', 'SeedSequence', 'get_state', 'set_state',
+                              'PCG64', 'PCG64DXSM', 'MT19937', 'Philox', 'SFC64', 'BitGenerator'}
+
     def detect_random_seed(self, node: nodes.Module, file_path: str):
-        # List of numpy random operations to check for
-        random_operations = [
-            'np.random.rand',
-            'np.random.randn',
-            'np.random.randint',
-            'np.random.choice',
-            'np.random.shuffle',
-            'np.random.permutation',
-            'np.random.normal',
-            'np.random.uniform'
-        ]
-
-        # Find all random operation calls
-        random_op_calls = [
-            call for call in node.nodes_of_class(nodes.Call)
-            if any(op in getattr(call.func, 'as_string', lambda: '')() for op in random_operations)
-        ]
-
-        # Find all random seed calls
-        random_seed_calls = [
-            call for call in node.nodes_of_class(nodes.Call)
-            if 'np.random.seed' in getattr(call.func, 'as_string', lambda: '')()
-        ]
-
-        # Only trigger smell if random operations are used without seed
-        if random_op_calls and not random_seed_calls:
-            self.add_smell('NumPy', 'Randomness Control Checker', node, file_path)
+        # Draws from the global generator without np.random.seed(), reported at the first draw; and generators
+        # created without a seed (np.random.default_rng()), reported where they are created
+        import_map = get_import_map(node)
+        draws, seeded = [], False
+        for call in nodes_of(node, nodes.Call):
+            qualname = resolve_call_name(call, import_map) or ''
+            if not qualname.startswith('numpy.random.'):
+                continue
+            name = qualname.rsplit('.', 1)[-1]
+            if name == 'seed':
+                seeded = True
+            elif name in ('default_rng', 'RandomState'):
+                if not call.args and not call.keywords:
+                    self.add_smell('NumPy', 'Randomness Control Checker', call, file_path)
+            elif name not in self.NUMPY_RANDOM_NON_DRAWS:
+                draws.append(call)
+        if draws and not seeded:
+            self.add_smell('NumPy', 'Randomness Control Checker', draws[0], file_path)
 
     ARRAY_CONSTRUCTORS = {'numpy.array', 'numpy.zeros', 'numpy.ones', 'numpy.empty'}
 
     def detect_array_creation(self, node: nodes.Module, file_path: str):
-        """Detect array creation without dtype (exact constructors; *_like inherit their argument's dtype)"""
+        """Detect array creation without dtype (exact constructors; ``*_like`` inherit their argument's dtype)"""
         import_map = get_import_map(node)
-        for call in node.nodes_of_class(nodes.Call):
+        for call in nodes_of(node, nodes.Call):
             if (resolve_call_name(call, import_map) in self.ARRAY_CONSTRUCTORS and
                     not any(kw.arg == 'dtype' for kw in call.keywords)):
                 self.add_smell('NumPy', 'Array Creation Efficiency', call, file_path)
@@ -351,21 +379,19 @@ class FrameworkSpecificSmellDetector:
         # Report the innermost loop around each reduction once (outer loops would duplicate the same call)
         import_map = get_import_map(node)
         reported = []
-        for call in node.nodes_of_class(nodes.Call):
+        for call in nodes_of(node, nodes.Call):
             if resolve_call_name(call, import_map) in ('numpy.sum', 'numpy.mean', 'numpy.max', 'numpy.min'):
                 loop = next((a for a in call.node_ancestors() if isinstance(a, nodes.For)), None)
                 if loop is not None and not any(loop is r for r in reported):
                     reported.append(loop)
                     self.add_smell('NumPy', 'Inefficient Operations', loop, file_path)
 
-        # Check for inefficient concatenation
-        for call in node.nodes_of_class(nodes.Call):
-            if 'np.concatenate' in call.func.as_string():
-                parent = call.parent
-                while parent and not isinstance(parent, nodes.For):
-                    parent = parent.parent
-                if parent:  # If concatenate is inside a loop
-                    self.add_smell('NumPy', 'Inefficient Operations', call, file_path)
+        # Growing an array inside a loop copies it every iteration (quadratic); collect in a list, join once
+        for call in nodes_of(node, nodes.Call):
+            if resolve_call_name(call, import_map) in self.ARRAY_GROWERS and in_loop(call):
+                self.add_smell('NumPy', 'Inefficient Operations', call, file_path)
+
+    ARRAY_GROWERS = {'numpy.concatenate', 'numpy.append', 'numpy.vstack', 'numpy.hstack', 'numpy.stack', 'numpy.row_stack'}
 
     INT_SCALARS = {'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'intc', 'intp'}
     FLOAT_SCALARS = {'float16', 'float32', 'float64', 'half', 'single', 'double', 'longdouble'}
@@ -381,57 +407,60 @@ class FrameworkSpecificSmellDetector:
             name = qualname.rsplit('.', 1)[-1]
             return 'int' if name in self.INT_SCALARS else 'float' if name in self.FLOAT_SCALARS else None
 
-        for binop in node.nodes_of_class(nodes.BinOp):
+        for binop in nodes_of(node, nodes.BinOp):
             if {scalar_kind(binop.left), scalar_kind(binop.right)} == {'int', 'float'}:
                 self.add_smell('NumPy', 'Dtype Consistency', binop, file_path)
 
     def detect_broadcasting_issues(self, node: nodes.Module, file_path: str):
         """Detect potential broadcasting issues"""
-        for binop in node.nodes_of_class(nodes.BinOp):
+        for binop in nodes_of(node, nodes.BinOp):
             if isinstance(binop.left, nodes.Call) and isinstance(binop.right, nodes.Call):
                 # Check for operations between arrays that might have broadcasting issues
-                if ('reshape' in binop.left.as_string() or 'reshape' in binop.right.as_string() or
-                        'transpose' in binop.left.as_string() or 'transpose' in binop.right.as_string()):
+                if ('reshape' in source(binop.left) or 'reshape' in source(binop.right) or
+                        'transpose' in source(binop.left) or 'transpose' in source(binop.right)):
                     self.add_smell('NumPy', 'Broadcasting Risk', binop, file_path)
 
     def detect_copy_view_issues(self, node: nodes.Module, file_path: str):
-        """Detect potential copy/view confusion in NumPy array operations"""
-        for assign in node.nodes_of_class(nodes.Assign):
-            # Only check assignments involving array slicing
-            if isinstance(assign.value, nodes.Subscript):
-                # Skip if it's not a NumPy array operation
-                if not any(np_indicator in assign.as_string()
-                           for np_indicator in ['np.', 'numpy.']):
+        """Detect `view = arr[a:b]` (basic slicing returns a view) followed by an in-place write to `view`,
+        which silently modifies `arr` too. Only arrays built by a numpy call in the same scope are tracked."""
+        import_map = get_import_map(node)
+
+        def is_basic_slice(index):
+            elts = index.elts if isinstance(index, nodes.Tuple) else [index]
+            return any(isinstance(e, nodes.Slice) for e in elts) and not any(isinstance(e, (nodes.List, nodes.Compare)) for e in elts)
+
+        for scope in [node] + list(nodes_of(node, nodes.FunctionDef)):
+            def own(n):
+                return n.scope() is scope
+            arrays = {a.targets[0].name for a in nodes_of(scope, nodes.Assign)
+                      if own(a) and isinstance(a.targets[0], nodes.AssignName) and isinstance(a.value, nodes.Call) and
+                      (resolve_call_name(a.value, import_map) or '').startswith('numpy.')}
+            for assign in nodes_of(scope, nodes.Assign):
+                value, target = assign.value, assign.targets[0]
+                # `a = a[1:]` rebinds the name: no second alias of the buffer is left to be confused about
+                if not (own(assign) and isinstance(target, nodes.AssignName) and isinstance(value, nodes.Subscript) and
+                        isinstance(value.value, nodes.Name) and value.value.name in arrays and is_basic_slice(value.slice) and
+                        value.value.name != target.name):
                     continue
+                writes = [w for w in nodes_of(scope, (nodes.Assign, nodes.AugAssign)) if own(w) and w.lineno > assign.lineno]
+                for w in writes:
+                    targets = w.targets if isinstance(w, nodes.Assign) else [w.target]
+                    if any(isinstance(t, nodes.Subscript) and isinstance(t.value, nodes.Name) and t.value.name == target.name or
+                           isinstance(w, nodes.AugAssign) and isinstance(t, nodes.AssignName) and t.name == target.name
+                           for t in targets):
+                        self.add_smell('NumPy', 'Copy-View Confusion', assign, file_path)
+                        break
 
-                # Check if the slice is being modified later
-                is_modified = False
-                parent = assign.parent
-                while parent and not isinstance(parent, nodes.Module):
-                    if isinstance(parent, (nodes.Assign, nodes.AugAssign)):
-                        # Look for modifications to the assigned variable
-                        target_name = assign.targets[0].as_string()
-                        if target_name in parent.as_string():
-                            is_modified = True
-                            break
-                    parent = parent.parent
-
-                # Only flag if:
-                # 1. The slice is modified later
-                # 2. No explicit copy is made
-                # 3. Not using advanced indexing (which creates copies)
-                if (is_modified and
-                    not any(method in assign.as_string() for method in ['.copy()', 'np.copy']) and
-                        not any(idx in assign.value.as_string() for idx in ['[[', 'bool', 'mask'])):
-                    self.add_smell('NumPy', 'Copy-View Confusion', assign, file_path)
+    AXIS_REDUCTIONS = {'sum', 'mean', 'max', 'min', 'argmax', 'argmin', 'any', 'all', 'std', 'var', 'median', 'prod',
+                       'nansum', 'nanmean', 'nanmax', 'nanmin', 'nanstd', 'nanvar', 'nanmedian', 'amax', 'amin'}
 
     def detect_axis_specification(self, node: nodes.Module, file_path: str):
-        """Detect missing axis specifications in array operations"""
-        axis_operations = ['sum', 'mean', 'max', 'min', 'argmax', 'argmin', 'any', 'all']
-        for call in node.nodes_of_class(nodes.Call):
-            if (any(op in call.func.as_string() for op in axis_operations) and
-                'np.' in call.func.as_string() and
-                not any(kw.arg == 'axis' for kw in call.keywords) and
+        """Detect numpy reductions called without axis (they silently reduce over the flattened array)"""
+        import_map = get_import_map(node)
+        for call in nodes_of(node, nodes.Call):
+            qualname = resolve_call_name(call, import_map) or ''
+            if (qualname.startswith('numpy.') and qualname.count('.') == 1 and qualname[6:] in self.AXIS_REDUCTIONS and
+                    not any(kw.arg in ('axis', None) for kw in call.keywords) and
                     len(call.args) < 2):  # axis can also be specified as positional argument
                 self.add_smell('NumPy', 'Missing Axis Specification', call, file_path)
 
@@ -452,39 +481,33 @@ class FrameworkSpecificSmellDetector:
             node: AST node representing the Python module
             file_path: Path to the file being analyzed
         """
-        self.detect_scaling_usage(node, file_path)
-        self.detect_pipeline_usage(node, file_path)
-        self.detect_cross_validation(node, file_path)
-        self.detect_random_state(node, file_path)
-        self.detect_verbose_mode(node, file_path)
-        self.detect_threshold_metrics(node, file_path)
-        self.detect_unit_tests(node, file_path)
-        self.detect_data_leakage(node, file_path)
-        self.detect_exception_handling(node, file_path)
+        run_checks((
+            self.detect_scaling_usage,
+            self.detect_pipeline_usage,
+            self.detect_cross_validation,
+            self.detect_random_state,
+            self.detect_verbose_mode,
+            self.detect_threshold_metrics,
+            self.detect_unit_tests,
+            self.detect_data_leakage,
+            self.detect_exception_handling,
+        ), node, file_path)
+
+    # Distance-, margin-, gradient- or variance-based estimators whose results depend on feature scale
+    SCALE_SENSITIVE = {'SVC', 'SVR', 'LinearSVC', 'LinearSVR', 'NuSVC', 'NuSVR', 'KNeighborsClassifier', 'KNeighborsRegressor',
+                       'RadiusNeighborsClassifier', 'RadiusNeighborsRegressor', 'KMeans', 'MiniBatchKMeans', 'PCA', 'KernelPCA',
+                       'LogisticRegression', 'SGDClassifier', 'SGDRegressor', 'MLPClassifier', 'MLPRegressor',
+                       'Ridge', 'Lasso', 'ElasticNet', 'DBSCAN', 'SpectralClustering', 'GaussianProcessClassifier'}
+    SCALERS = {'StandardScaler', 'MinMaxScaler', 'RobustScaler', 'MaxAbsScaler', 'Normalizer', 'QuantileTransformer',
+               'PowerTransformer', 'scale', 'minmax_scale', 'robust_scale', 'maxabs_scale', 'normalize'}
 
     def detect_scaling_usage(self, node: nodes.Module, file_path: str):
-        scaling_sensitive_estimators = [
-            'SVM', 'SVR', 'PCA', 'KMeans', 'NeuralNetwork', 'LogisticRegression'
-        ]
-        scaling_methods = ['StandardScaler', 'MinMaxScaler', 'RobustScaler']
-
-        # Check if scaling-sensitive estimators are used
-        has_sensitive_estimator = any(
-            estimator in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-            for estimator in scaling_sensitive_estimators
-        )
-
-        # Check if any scaling is applied
-        has_scaling = any(
-            method in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-            for method in scaling_methods
-        )
-
-        # Only report if using sensitive estimators without scaling
-        if has_sensitive_estimator and not has_scaling:
-            self.add_smell('ScikitLearn', 'Scaler Missing Checker', node, file_path)
+        # Reported at the first scale-sensitive estimator when nothing in the module scales features
+        if any(callee_name(c) in self.SCALERS for c in nodes_of(node, nodes.Call)):
+            return
+        first = next((c for c in nodes_of(node, nodes.Call) if callee_name(c) in self.SCALE_SENSITIVE), None)
+        if first is not None:
+            self.add_smell('ScikitLearn', 'Scaler Missing Checker', first, file_path)
 
     def detect_pipeline_usage(self, node: nodes.Module, file_path: str):
         # Check if there are multiple preprocessing or model fitting steps
@@ -497,20 +520,20 @@ class FrameworkSpecificSmellDetector:
         ]
 
         has_preprocessing = any(
-            step in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            step in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for step in preprocessing_steps
         )
         has_model_steps = any(
-            step in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            step in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for step in model_steps
         )
 
-        # Only suggest Pipeline if multiple steps are present
+        # Only suggest Pipeline if multiple steps are present (make_pipeline(...) is a Pipeline too)
         if has_preprocessing and has_model_steps and not any(
-            'Pipeline' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            callee_name(call) in ('Pipeline', 'make_pipeline')
+            for call in nodes_of(node, nodes.Call)
         ):
             self.add_smell('ScikitLearn', 'Pipeline Checker', node, file_path)
 
@@ -518,19 +541,21 @@ class FrameworkSpecificSmellDetector:
         # Check if model training is performed
         training_indicators = ['fit', 'train']
         has_training = any(
-            indicator in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            indicator in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for indicator in training_indicators
         )
 
         # Check for any cross-validation technique
+        # Substrings: 'KFold' covers Stratified/Group/Repeated variants, 'SearchCV' the Halving* searches,
+        # 'CV' the built-in CV estimators (LogisticRegressionCV, RidgeCV, RFECV, ...)
         cv_methods = [
-            'cross_val_score', 'KFold', 'StratifiedKFold',
-            'cross_validate', 'GridSearchCV', 'RandomizedSearchCV'
+            'cross_val_score', 'cross_val_predict', 'cross_validate', 'KFold', 'ShuffleSplit', 'TimeSeriesSplit',
+            'LeaveOneOut', 'LeavePOut', 'LeaveOneGroupOut', 'PredefinedSplit', 'SearchCV', 'CV',
         ]
         has_cv = any(
-            method in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            method in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for method in cv_methods
         )
 
@@ -540,16 +565,21 @@ class FrameworkSpecificSmellDetector:
 
     # scikit-learn APIs whose result depends on random_state (matched on the resolved callee, not a substring)
     RANDOM_STATE_APIS = {
-        'train_test_split', 'shuffle', 'KFold', 'StratifiedKFold', 'RepeatedKFold', 'RepeatedStratifiedKFold',
-        'ShuffleSplit', 'StratifiedShuffleSplit', 'RandomForestClassifier', 'RandomForestRegressor',
-        'KMeans', 'MiniBatchKMeans', 'PCA', 'KernelPCA', 'SparsePCA', 'MiniBatchSparsePCA',
+        'train_test_split', 'shuffle', 'resample', 'KFold', 'StratifiedKFold', 'RepeatedKFold', 'RepeatedStratifiedKFold',
+        'ShuffleSplit', 'StratifiedShuffleSplit', 'GroupShuffleSplit', 'RandomizedSearchCV',
+        'RandomForestClassifier', 'RandomForestRegressor', 'ExtraTreesClassifier', 'ExtraTreesRegressor',
+        'GradientBoostingClassifier', 'GradientBoostingRegressor', 'HistGradientBoostingClassifier',
+        'HistGradientBoostingRegressor', 'AdaBoostClassifier', 'AdaBoostRegressor', 'BaggingClassifier', 'BaggingRegressor',
+        'IsolationForest', 'DecisionTreeClassifier', 'DecisionTreeRegressor', 'MLPClassifier', 'MLPRegressor',
+        'SGDClassifier', 'SGDRegressor', 'KMeans', 'MiniBatchKMeans', 'PCA', 'KernelPCA', 'SparsePCA', 'MiniBatchSparsePCA',
+        'TruncatedSVD', 'NMF', 'TSNE', 'GaussianMixture', 'make_classification', 'make_regression', 'make_blobs',
     }
     # These splitters only use random_state when shuffle=True (sklearn raises if it is set otherwise)
     SHUFFLE_GATED_SPLITTERS = {'KFold', 'StratifiedKFold'}
 
     def detect_random_state(self, node: nodes.Module, file_path: str):
         import_map = get_import_map(node)
-        for call in node.nodes_of_class(nodes.Call):
+        for call in nodes_of(node, nodes.Call):
             qualname = resolve_call_name(call, import_map) or ''
             api = qualname.rsplit('.', 1)[-1]
             if not qualname.startswith('sklearn.') or api not in self.RANDOM_STATE_APIS:
@@ -558,7 +588,7 @@ class FrameworkSpecificSmellDetector:
                     kw.arg == 'shuffle' and not (isinstance(kw.value, nodes.Const) and kw.value.value is False)
                     for kw in call.keywords):
                 continue
-            if not any(kw.arg == 'random_state' for kw in call.keywords):
+            if not any(kw.arg in ('random_state', None) for kw in call.keywords):  # None: **kwargs may carry it
                 self.add_smell('ScikitLearn', 'Randomness Control Checker', call, file_path)
 
     # Long-running scikit-learn constructors that take a verbose parameter (fit() itself never does)
@@ -569,7 +599,7 @@ class FrameworkSpecificSmellDetector:
 
     def detect_verbose_mode(self, node: nodes.Module, file_path: str):
         import_map = get_import_map(node)
-        for call in node.nodes_of_class(nodes.Call):
+        for call in nodes_of(node, nodes.Call):
             qualname = resolve_call_name(call, import_map) or ''
             if (qualname.startswith('sklearn.') and qualname.rsplit('.', 1)[-1] in self.VERBOSE_APIS and
                     not any(kw.arg == 'verbose' for kw in call.keywords)):
@@ -585,7 +615,7 @@ class FrameworkSpecificSmellDetector:
 
         # Check if it's a classification task
         is_classification = any(
-            indicator in node.as_string()
+            indicator in source(node)
             for indicator in classification_indicators
         )
 
@@ -595,8 +625,8 @@ class FrameworkSpecificSmellDetector:
             'precision_recall_curve', 'roc_curve'
         ]
         has_threshold_metrics = any(
-            metric in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            metric in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for metric in threshold_independent_metrics
         )
 
@@ -611,13 +641,13 @@ class FrameworkSpecificSmellDetector:
         dirs = [path.parent] + [d / sub for d in path.resolve().parents for sub in ('tests', 'test')]
         return any((d / n).is_file() for d in dirs for n in names)
 
-    def detect_unit_tests(self, node: nodes.Module, file_path: str):
+    def detect_unit_tests(self, node: nodes.Module, file_path: str, framework: str = 'ScikitLearn'):
         path = Path(file_path)
         # A test module is recognised by its name/location or by the tests it defines, not by the substring 'test'
         is_test_file = (path.name.startswith('test_') or path.stem.endswith('_test') or
                         any(part in ('test', 'tests') for part in path.parent.parts) or
-                        any(f.name.startswith('test_') for f in node.nodes_of_class(nodes.FunctionDef)) or
-                        any('TestCase' in base.as_string() for c in node.nodes_of_class(nodes.ClassDef) for base in c.bases))
+                        any(f.name.startswith('test_') for f in nodes_of(node, nodes.FunctionDef)) or
+                        any('TestCase' in source(base) for c in nodes_of(node, nodes.ClassDef) for base in c.bases))
 
         # Check for model training or evaluation code
         ml_operations = [
@@ -625,14 +655,14 @@ class FrameworkSpecificSmellDetector:
             'cross_val_score', 'GridSearchCV'
         ]
         has_ml_operations = any(
-            op in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            op in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for op in ml_operations
         )
 
         # Tests live in their own files: look for one instead of grepping this module for 'pytest'
         if not is_test_file and has_ml_operations and not self._has_test_file(path):
-            self.add_smell('ScikitLearn', 'Unit Testing Checker', node, file_path)
+            self.add_smell(framework, 'Unit Testing Checker', node, file_path)
 
     def detect_data_leakage(self, node: nodes.Module, file_path: str):
         # Check for data preprocessing operations
@@ -641,15 +671,15 @@ class FrameworkSpecificSmellDetector:
             'MinMaxScaler', 'PCA', 'feature_selection'
         ]
         has_preprocessing = any(
-            op in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            op in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for op in preprocessing_ops
         )
 
         # Check for model training
         has_model_training = any(
-            'fit' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'fit' in source(call.func)
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Check for proper train-test splitting
@@ -658,8 +688,8 @@ class FrameworkSpecificSmellDetector:
             'GroupKFold', 'TimeSeriesSplit'
         ]
         has_proper_split = any(
-            method in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            method in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for method in splitting_methods
         )
 
@@ -671,17 +701,30 @@ class FrameworkSpecificSmellDetector:
     # fit/predict/transform are deliberately excluded: wrapping them in try/except mostly hides real errors.
     RISKY_IO_CALLS = {'joblib.load', 'joblib.dump', 'pickle.load', 'pickle.dump'}
 
-    def detect_exception_handling(self, node: nodes.Module, file_path: str):
+    def detect_exception_handling(self, node: nodes.Module, file_path: str, framework: str = 'ScikitLearn', is_risky=None):
         import_map = get_import_map(node)
-        for call in node.nodes_of_class(nodes.Call):
-            if resolve_call_name(call, import_map) not in self.RISKY_IO_CALLS:
+        is_risky = is_risky or (lambda qualname: qualname in self.RISKY_IO_CALLS)
+        for call in nodes_of(node, nodes.Call):
+            if not is_risky(resolve_call_name(call, import_map) or ''):
                 continue
             if not any(isinstance(parent, nodes.Try) for parent in call.node_ancestors()):
-                self.add_smell('ScikitLearn', 'Exception Handling Checker', call, file_path)
+                self.add_smell(framework, 'Exception Handling Checker', call, file_path)
+
+    @staticmethod
+    def _is_tf_artifact_io(qualname: str) -> bool:
+        """tf.keras.models.load_model / keras.models.load_model / tf.saved_model.load|save, however imported."""
+        return (qualname.startswith(('tensorflow.', 'keras.')) and
+                qualname.endswith(('models.load_model', 'saved_model.load', 'saved_model.save')))
+
+    def detect_tf_unit_tests(self, node: nodes.Module, file_path: str):
+        self.detect_unit_tests(node, file_path, framework='TensorFlow')
+
+    def detect_tf_exception_handling(self, node: nodes.Module, file_path: str):
+        self.detect_exception_handling(node, file_path, framework='TensorFlow', is_risky=self._is_tf_artifact_io)
 
     def check_imports(self, node: nodes.Module, file_path: str):
         # The np/pd alias convention is about importing the module; `from numpy import ndarray` is fine
-        for import_node in node.nodes_of_class(nodes.Import):
+        for import_node in nodes_of(node, nodes.Import):
             for name, alias in import_node.names:
                 if name == 'numpy' and alias != 'np':
                     self.add_smell('General', 'Import Checker', import_node, file_path)
@@ -708,39 +751,37 @@ class FrameworkSpecificSmellDetector:
             node: AST node representing the Python module
             file_path: Path to the file being analyzed
         """
-        self.detect_pytorch_random_seed(node, file_path)
-        self.detect_pytorch_deterministic(node, file_path)
-        self.detect_pytorch_dataloader_random(node, file_path)
-        self.detect_pytorch_mask(node, file_path)
-        self.detect_pytorch_forward(node, file_path)
-        self.detect_pytorch_grad_zero(node, file_path)
-        self.detect_pytorch_batch_norm(node, file_path)
-        self.detect_pytorch_dropout(node, file_path)
-        self.detect_pytorch_augmentation(node, file_path)
-        self.detect_pytorch_lr_scheduler(node, file_path)
-        self.detect_pytorch_logging(node, file_path)
-        self.detect_pytorch_eval_mode(node, file_path)
+        run_checks((
+            self.detect_pytorch_random_seed,
+            self.detect_pytorch_deterministic,
+            self.detect_pytorch_dataloader_random,
+            self.detect_pytorch_mask,
+            self.detect_pytorch_forward,
+            self.detect_pytorch_grad_zero,
+            self.detect_pytorch_batch_norm,
+            self.detect_pytorch_dropout,
+            self.detect_pytorch_augmentation,
+            self.detect_pytorch_lr_scheduler,
+            self.detect_pytorch_logging,
+            self.detect_pytorch_eval_mode,
+        ), node, file_path)
+
+    TORCH_SEEDERS = ('manual_seed', 'manual_seed_all', 'seed_everything', 'set_seed')
 
     def detect_pytorch_random_seed(self, node: nodes.Module, file_path: str):
-        # Check if there are any random operations that need seeding
+        # Random tensor ops, dropout and random_split need torch.manual_seed (or a seed_everything/set_seed helper)
         random_operations = [
-            'torch.rand', 'torch.randn', 'torch.randint',
-            'torch.randperm', 'torch.bernoulli', 'torch.normal',
-            'torch.dropout', 'torch.nn.Dropout'
+            'torch.rand', 'torch.randn', 'torch.randint', 'torch.randperm', 'torch.bernoulli', 'torch.normal',
+            'torch.multinomial', 'dropout', 'Dropout', 'random_split',
         ]
 
         has_random_ops = any(
-            op in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            op in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for op in random_operations
         )
 
-        has_manual_seed = any(
-            'torch.manual_seed' in call.func.as_string() or
-            'torch.cuda.manual_seed' in call.func.as_string() or
-            'torch.cuda.manual_seed_all' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
+        has_manual_seed = any(callee_name(call) in self.TORCH_SEEDERS for call in nodes_of(node, nodes.Call))
 
         # Only report if random operations are used without seeding
         if has_random_ops and not has_manual_seed:
@@ -750,22 +791,22 @@ class FrameworkSpecificSmellDetector:
         # Check for operations that benefit from deterministic algorithms
         # torch.cuda alone (e.g. torch.cuda.is_available()) is device selection, not a nondeterministic op
         deterministic_sensitive_ops = [
-            'torch.nn.Conv', 'torch.nn.LSTM', 'torch.nn.GRU',
+            'torch.nn.Conv', 'nn.Conv', 'torch.nn.LSTM', 'nn.LSTM', 'torch.nn.GRU', 'nn.GRU',
             'torch.backends.cudnn', 'DataLoader'
         ]
 
         has_sensitive_ops = any(
-            op in node.as_string()
+            op in source(node)
             for op in deterministic_sensitive_ops
         )
 
-        # cudnn.deterministic is set by assignment, so look at assignment targets as well as calls
+        # cudnn.deterministic is set by assignment (also after `from torch.backends import cudnn`)
         has_deterministic_setting = any(
-            'torch.use_deterministic_algorithms' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            callee_name(call) == 'use_deterministic_algorithms'
+            for call in nodes_of(node, nodes.Call)
         ) or any(
-            target.as_string() == 'torch.backends.cudnn.deterministic'
-            for assign in node.nodes_of_class(nodes.Assign)
+            source(target).endswith('cudnn.deterministic')
+            for assign in nodes_of(node, nodes.Assign)
             for target in assign.targets
         )
 
@@ -774,97 +815,62 @@ class FrameworkSpecificSmellDetector:
             self.add_smell('PyTorch', 'Deterministic Algorithm Usage Checker', node, file_path)
 
     def detect_pytorch_dataloader_random(self, node: nodes.Module, file_path: str):
-        for call in node.nodes_of_class(nodes.Call):
-            if 'DataLoader' in call.func.as_string():
-                # Check if it's actually a PyTorch DataLoader
-                is_pytorch_dataloader = any(
-                    'torch' in imp.modname
-                    for imp in node.nodes_of_class(nodes.ImportFrom)
-                )
+        # A shuffling torch DataLoader without generator=/worker_init_fn= (however DataLoader was imported)
+        import_map = get_import_map(node)
+        for call in nodes_of(node, nodes.Call):
+            if callee_name(call) != 'DataLoader' or not (resolve_call_name(call, import_map) or '').startswith('torch.'):
+                continue
+            shuffle = keyword(call, 'shuffle')
+            has_shuffle = not (shuffle is None or isinstance(shuffle, nodes.Const) and not shuffle.value)
+            has_random_control = any(kw.arg in ('worker_init_fn', 'generator', 'sampler', 'batch_sampler', None)
+                                     for kw in call.keywords)
+            if has_shuffle and not has_random_control:
+                self.add_smell('PyTorch', 'Randomness Control Checker (PyTorch-Dataloader)', call, file_path)
 
-                # Check if shuffling is enabled
-                has_shuffle = any(
-                    (kw.arg == 'shuffle' and getattr(kw.value, 'value', False) is True)
-                    for kw in call.keywords
-                )
-
-                # Check for proper random state control
-                has_random_control = any(
-                    (kw.arg in ['worker_init_fn', 'generator'])
-                    for kw in call.keywords
-                )
-
-                # Only report if it's a PyTorch DataLoader with shuffling but no random control
-                if is_pytorch_dataloader and has_shuffle and not has_random_control:
-                    self.add_smell('PyTorch', 'Randomness Control Checker (PyTorch-Dataloader)', call, file_path)
+    TORCH_LOGS = {'torch.log', 'torch.log2', 'torch.log10'}
 
     def detect_pytorch_mask(self, node: nodes.Module, file_path: str):
-        for call in node.nodes_of_class(nodes.Call):
-            if 'torch.log' in call.func.as_string():
-                # Check if the input might contain zeros or negative values
-                input_arg = call.args[0] if call.args else None
-                if input_arg:
-                    # Look for potential risky operations before the log
-                    risky_ops = ['zeros', 'randn', 'rand', 'sub', 'subtract']
-                    has_risky_input = any(
-                        op in input_arg.as_string()
-                        for op in risky_ops
-                    )
-
-                    # Check if masking is applied
-                    has_mask = (
-                        len(call.args) > 1 or
-                        any(op in node.as_string() for op in ('clamp', 'mask', 'where'))
-                    )
-
-                    # Only report if there's a risk of invalid input without masking
-                    if has_risky_input and not has_mask:
-                        self.add_smell('PyTorch', 'Mask Missing Checker', call, file_path)
+        # torch.log(x) of an input that can be zero/negative, with no clamp/mask/where in the module.
+        # Exact callee: log_softmax, logsumexp, logical_and and log1p are safe or unrelated.
+        import_map = get_import_map(node)
+        has_mask = any(op in source(node) for op in ('clamp', 'mask', 'where'))
+        if has_mask:
+            return
+        risky_ops = ['zeros', 'randn', 'rand', 'sub', 'subtract']
+        for call in nodes_of(node, nodes.Call):
+            if resolve_call_name(call, import_map) in self.TORCH_LOGS and len(call.args) == 1:
+                if any(op in source(call.args[0]) for op in risky_ops):
+                    self.add_smell('PyTorch', 'Mask Missing Checker', call, file_path)
 
     def detect_pytorch_forward(self, node: nodes.Module, file_path: str):
-        for call in node.nodes_of_class(nodes.Call):
-            if 'forward' in call.func.as_string():
-                # Check if it's a direct forward call on a neural network
-                is_nn_forward = (
-                    isinstance(call.func, nodes.Attribute) and
-                    'forward' in call.func.attrname and
-                    any(parent_cls.bases and
-                        'nn.Module' in parent_cls.bases[0].as_string()
-                        for parent_cls in node.nodes_of_class(nodes.ClassDef))
-                )
+        # model.forward(x) / self.encoder.forward(x) bypass nn.Module.__call__ (hooks). Not reported: forward on a
+        # call result (super().forward(x) in an override, rref.rpc_async().forward(x) RPC proxies) and a module
+        # calling its own self.forward(x).
+        for call in nodes_of(node, nodes.Call):
+            func = call.func
+            if not (isinstance(func, nodes.Attribute) and func.attrname == 'forward'):
+                continue
+            receiver = func.expr
+            if isinstance(receiver, nodes.Call) or isinstance(receiver, nodes.Name) and receiver.name == 'self':
+                continue
+            self.add_smell('PyTorch', 'Net Forward Checker', call, file_path)
 
-                # Check if it's called directly instead of using __call__
-                is_direct_call = (
-                    'net.forward' in call.func.as_string() or
-                    'model.forward' in call.func.as_string()
-                )
+    TORCH_OPTIMIZERS = {'SGD', 'Adam', 'AdamW', 'Adamax', 'Adagrad', 'Adadelta', 'RMSprop', 'Rprop', 'NAdam', 'RAdam',
+                        'LBFGS', 'SparseAdam', 'ASGD'}
 
-                # Only report if it's a direct forward call on an nn.Module
-                if is_nn_forward and is_direct_call:
-                    self.add_smell('PyTorch', 'Net Forward Checker', call, file_path)
+    def _has_torch_optimizer(self, node: nodes.Module) -> bool:
+        import_map = get_import_map(node)
+        return any('optim.' in source(call.func) or
+                   (resolve_call_name(call, import_map) or '').startswith('torch.optim') or
+                   callee_name(call) in self.TORCH_OPTIMIZERS
+                   for call in nodes_of(node, nodes.Call))
 
     def detect_pytorch_grad_zero(self, node: nodes.Module, file_path: str):
-        # Check if there's actual training happening
-        has_training_loop = any(
-            'loss.backward' in call.func.as_string() or
-            'backward' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
-        has_optimizer = any(
-            'optim.' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
-        has_grad_zero = any(
-            'zero_grad' in call.func.as_string() or
-            'set_to_none' in call.func.as_string()  # Alternative method
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
-        # Only report if there's training without gradient zeroing
-        if has_training_loop and has_optimizer and not has_grad_zero:
-            self.add_smell('PyTorch', 'Gradient Clear Checker', node, file_path)
+        # loss.backward() with an optimizer but no zero_grad() anywhere: gradients accumulate across steps
+        backward = next((c for c in nodes_of(node, nodes.Call) if callee_name(c) == 'backward'), None)
+        has_grad_zero = any(callee_name(c) == 'zero_grad' for c in nodes_of(node, nodes.Call))
+        if backward is not None and not has_grad_zero and self._has_torch_optimizer(node):
+            self.add_smell('PyTorch', 'Gradient Clear Checker', backward, file_path)
 
     def detect_pytorch_batch_norm(self, node: nodes.Module, file_path: str):
         # Check if it's a CNN or deep network that could benefit from BatchNorm
@@ -874,19 +880,20 @@ class FrameworkSpecificSmellDetector:
         ]
 
         has_conv_layers = any(
-            layer in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            layer in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for layer in conv_layers
         )
 
         has_deep_structure = len([
-            call for call in node.nodes_of_class(nodes.Call)
-            if any(layer in call.func.as_string() for layer in ['Linear', 'Conv'])
+            call for call in nodes_of(node, nodes.Call)
+            if any(layer in source(call.func) for layer in ['Linear', 'Conv'])
         ]) > 2
 
+        # Any normalisation layer counts: BatchNorm, LayerNorm (transformers), GroupNorm, InstanceNorm, RMSNorm
         has_batch_norm = any(
-            'BatchNorm' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'Norm' in callee_name(call)
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only suggest BatchNorm for appropriate architectures
@@ -896,20 +903,19 @@ class FrameworkSpecificSmellDetector:
     def detect_pytorch_dropout(self, node: nodes.Module, file_path: str):
         # Check if the model is complex enough to benefit from dropout
         has_multiple_layers = len([
-            call for call in node.nodes_of_class(nodes.Call)
-            if any(layer in call.func.as_string()
+            call for call in nodes_of(node, nodes.Call)
+            if any(layer in source(call.func)
                    for layer in ['Linear', 'Conv', 'LSTM', 'GRU'])
         ]) > 2
 
         has_training_code = any(
-            'train' in call.func.as_string() or
-            'backward' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            callee_name(call) in ('train', 'backward')
+            for call in nodes_of(node, nodes.Call)
         )
 
         has_dropout = any(
-            'Dropout' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'dropout' in source(call.func).lower()
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only suggest dropout for complex models during training
@@ -917,82 +923,73 @@ class FrameworkSpecificSmellDetector:
             self.add_smell('PyTorch', 'Dropout Usage Checker', node, file_path)
 
     def detect_pytorch_augmentation(self, node: nodes.Module, file_path: str):
-        # Check if it's a computer vision task
+        # A vision task: image datasets/layers/libraries. DataLoader or Dataset alone says nothing about images.
         vision_indicators = [
-            'ImageFolder', 'Dataset', 'DataLoader',
-            'Conv2d', 'Conv3d', 'ResNet', 'VGG',
-            'image', 'img', 'PIL'
+            'ImageFolder', 'torchvision', 'Conv2d', 'Conv3d', 'ResNet', 'resnet', 'VGG', 'vgg', 'PIL', 'Image.open',
+            'CIFAR', 'MNIST', 'ImageNet',
         ]
 
         is_vision_task = any(
-            indicator in node.as_string()
+            indicator in source(node)
             for indicator in vision_indicators
         )
 
         has_training = any(
-            'train' in call.func.as_string() or
-            'fit' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            callee_name(call) in ('train', 'fit', 'backward')
+            for call in nodes_of(node, nodes.Call)
         )
 
         has_augmentation = any(
-            'transforms' in call.func.as_string() or
-            'augment' in call.func.as_string().lower()
-            for call in node.nodes_of_class(nodes.Call)
+            'transforms' in source(call.func) or
+            'augment' in source(call.func).lower() or
+            'albumentations' in source(call.func)
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only suggest augmentation for vision tasks during training
         if is_vision_task and has_training and not has_augmentation:
             self.add_smell('PyTorch', 'Data Augmentation Checker', node, file_path)
 
+    @staticmethod
+    def _longest_epoch_loop(node: nodes.Module) -> int:
+        """Largest literal epoch count of a `for epoch in range(...)` loop (range(N), range(1, N), range(EPOCHS))."""
+        longest = 0
+        for loop in nodes_of(node, nodes.For):
+            if 'epoch' not in source(loop.target).lower() or not isinstance(loop.iter, nodes.Call):
+                continue
+            args = loop.iter.args
+            if callee_name(loop.iter) == 'range' and args:
+                stop = int_value(args[1] if len(args) > 1 else args[0])
+                start = int_value(args[0]) if len(args) > 1 else 0
+                if stop is not None and start is not None:
+                    longest = max(longest, stop - start)
+        return longest
+
     def detect_pytorch_lr_scheduler(self, node: nodes.Module, file_path: str):
-        # Check if there's a training loop with enough epochs
-        has_epochs = False
-        for loop in node.nodes_of_class(nodes.For):  # not `node`: that would shadow the module below
-            if 'epoch' in loop.as_string().lower():
-                try:
-                    # Try to determine the number of epochs
-                    if hasattr(loop.iter, 'args') and len(loop.iter.args) > 0:
-                        epoch_num = int(loop.iter.args[0].value)
-                        has_epochs = has_epochs or epoch_num > 10  # Suggest scheduler for longer training
-                except (AttributeError, ValueError):
-                    continue
-
-        has_optimizer = any(
-            'optim.' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
+        # More than 10 epochs with an optimizer and no torch.optim.lr_scheduler (or a transformers get_*_schedule*)
         has_scheduler = any(
-            'lr_scheduler' in call.func.as_string() or
-            'LRScheduler' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'lr_scheduler' in source(call.func) or
+            'LRScheduler' in source(call.func) or
+            'schedule' in callee_name(call)
+            for call in nodes_of(node, nodes.Call)
         )
 
-        # Only suggest scheduler for long training processes
-        if has_epochs and has_optimizer and not has_scheduler:
+        if self._longest_epoch_loop(node) > 10 and not has_scheduler and self._has_torch_optimizer(node):
             self.add_smell('PyTorch', 'Learning Rate Scheduler Checker', node, file_path)
+
+    EXPERIMENT_LOGGERS = ('tensorboard', 'summarywriter', 'wandb', 'mlflow', 'neptune', 'comet_ml', 'aim.', 'clearml',
+                          'logger', 'logging', 'csvlogger', 'dvclive')
 
     def detect_pytorch_logging(self, node: nodes.Module, file_path: str):
         # Check if there's actual training to log
         has_training_loop = any(
-            'train' in call.func.as_string() or
-            'backward' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            callee_name(call) in ('train', 'backward')
+            for call in nodes_of(node, nodes.Call)
         )
 
-        has_metrics = any(
-            metric in node.as_string().lower()
-            for metric in ['loss', 'accuracy', 'score', 'metric']
-        )
-
-        has_logging = any(
-            logger in node.as_string()
-            for logger in [
-                'tensorboard', 'SummaryWriter', 'wandb',
-                'MLflow', 'Neptune', 'logger'
-            ]
-        )
+        text = source(node).lower()
+        has_metrics = any(metric in text for metric in ['loss', 'accuracy', 'score', 'metric'])
+        has_logging = any(logger in text for logger in self.EXPERIMENT_LOGGERS)
 
         # Only suggest logging for training with metrics
         if has_training_loop and has_metrics and not has_logging:
@@ -1006,20 +1003,21 @@ class FrameworkSpecificSmellDetector:
         ]
 
         has_evaluation = any(
-            indicator in node.as_string().lower()
+            indicator in source(node).lower()
             for indicator in evaluation_indicators
         )
 
         has_model_usage = any(
-            'forward' in call.func.as_string() or
-            'model(' in call.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'forward' in source(call.func) or
+            'model(' in source(call)
+            for call in nodes_of(node, nodes.Call)
         )
 
+        # model.eval(), or model.train(False) which is the same thing
         has_eval_mode = any(
-            'eval' in call.func.as_string() or
-            'train(False)' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            callee_name(call) == 'eval' or
+            callee_name(call) == 'train' and call.args and isinstance(call.args[0], nodes.Const) and call.args[0].value is False
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only suggest eval mode when doing validation/testing
@@ -1047,162 +1045,116 @@ class FrameworkSpecificSmellDetector:
             node: AST node representing the Python module
             file_path: Path to the file being analyzed
         """
-        self.detect_tf_random_seed(node, file_path)
-        self.detect_tf_early_stopping(node, file_path)
-        self.detect_tf_checkpointing(node, file_path)
-        self.detect_tf_memory_release(node, file_path)
-        self.detect_tf_mask(node, file_path)
-        self.detect_tf_tensor_array(node, file_path)
-        self.detect_tf_metrics(node, file_path)
-        self.detect_tf_logging(node, file_path)
-        self.detect_tf_batch_norm(node, file_path)
-        self.detect_tf_dropout(node, file_path)
-        self.detect_tf_augmentation(node, file_path)
-        self.detect_tf_lr_scheduler(node, file_path)
-        self.detect_tf_model_evaluation(node, file_path)
+        run_checks((
+            self.detect_tf_random_seed,
+            self.detect_tf_early_stopping,
+            self.detect_tf_checkpointing,
+            self.detect_tf_memory_release,
+            self.detect_tf_mask,
+            self.detect_tf_tensor_array,
+            self.detect_tf_metrics,
+            self.detect_tf_logging,
+            self.detect_tf_batch_norm,
+            self.detect_tf_dropout,
+            self.detect_tf_augmentation,
+            self.detect_tf_lr_scheduler,
+            self.detect_tf_model_evaluation,
+            self.detect_tf_unit_tests,
+            self.detect_tf_exception_handling,
+        ), node, file_path)
 
     def detect_tf_random_seed(self, node: nodes.Module, file_path: str):
         # Check for operations that need random seed control
         random_ops = [
-            'random.normal', 'random.uniform', 'random.shuffle',
-            'dropout', 'RandomRotation', 'RandomFlip', 'RandomZoom'
+            'random.normal', 'random.uniform', 'random.shuffle', 'random.categorical',
+            'dropout', 'Dropout', 'RandomRotation', 'RandomFlip', 'RandomZoom', 'RandomCrop'
         ]
 
         has_random_ops = any(
-            op in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            op in source(call.func)
+            for call in nodes_of(node, nodes.Call)
             for op in random_ops
         )
 
         has_seed_set = any(
-            'random.set_seed' in call.func.as_string() or
-            'set_random_seed' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'random.set_seed' in source(call.func) or
+            'set_random_seed' in source(call.func)
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only report if random operations are used without seed
         if has_random_ops and not has_seed_set:
             self.add_smell('TensorFlow', 'Randomness Control Checker', node, file_path)
 
+    @staticmethod
+    def _fit_calls(node: nodes.Module) -> List[nodes.Call]:
+        return [c for c in nodes_of(node, nodes.Call) if callee_name(c) == 'fit']
+
     def detect_tf_early_stopping(self, node: nodes.Module, file_path: str):
-        # Check if there's actual model training
-        has_training = any(
-            'model.fit' in call.func.as_string() or
-            'fit(' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
-        # Check for training loop with multiple epochs
-        # kw.arg is None for **kwargs; epochs may also be a non-numeric expression
-        has_multiple_epochs = any(
-            kw.arg is not None and 'epochs' in kw.arg and
-            isinstance(getattr(kw.value, 'value', None), (int, float)) and kw.value.value > 1
-            for call in node.nodes_of_class(nodes.Call)
-            for kw in call.keywords
-        )
-
-        has_early_stopping = any(
-            'EarlyStopping' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
-        # Only suggest early stopping for actual training with multiple epochs
-        if has_training and has_multiple_epochs and not has_early_stopping:
-            self.add_smell('TensorFlow', 'Early Stopping Checker', node, file_path)
+        # x.fit(..., epochs=N) with N > 1 (a literal or a name bound to one) and no EarlyStopping callback
+        has_early_stopping = any('EarlyStopping' in source(call.func) for call in nodes_of(node, nodes.Call))
+        if has_early_stopping:
+            return
+        for call in self._fit_calls(node):
+            epochs = int_value(keyword(call, 'epochs'))
+            if epochs is not None and epochs > 1:
+                self.add_smell('TensorFlow', 'Early Stopping Checker', call, file_path)
+                return
 
     def detect_tf_checkpointing(self, node: nodes.Module, file_path: str):
-        # Check for model training and complexity
-        has_training = any(
-            'model.fit' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
         has_complex_model = any(
-            layer in node.as_string()
+            layer in source(node)
             for layer in ['Dense', 'Conv', 'LSTM', 'GRU']
         )
 
         has_checkpointing = any(
-            'ModelCheckpoint' in call.func.as_string() or
-            'save_weights' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            any(ckpt in source(call.func) for ckpt in ('ModelCheckpoint', 'BackupAndRestore', 'Checkpoint')) or
+            callee_name(call) in ('save_weights', 'save')
+            for call in nodes_of(node, nodes.Call)
         )
 
-        # Only suggest checkpointing for complex models during training
-        if has_training and has_complex_model and not has_checkpointing:
-            self.add_smell('TensorFlow', 'Checkpointing Checker', node, file_path)
+        fits = self._fit_calls(node)
+        if fits and has_complex_model and not has_checkpointing:
+            self.add_smell('TensorFlow', 'Checkpointing Checker', fits[0], file_path)
 
     def detect_tf_memory_release(self, node: nodes.Module, file_path: str):
-        # Check for memory-intensive operations
-        memory_intensive_ops = [
-            'model.fit', 'predict', 'evaluate',
-            'Conv', 'LSTM', 'GRU', 'Attention'
-        ]
+        # Models trained inside a loop (hyper-parameter sweeps, k-fold) pile up in the Keras session unless
+        # clear_session() is called. A single model per script does not leak, and a loop that only stacks layers
+        # (keras.Sequential blocks inside a model definition) builds one model, so the loop must compile or fit.
+        if any(callee_name(c) == 'clear_session' for c in nodes_of(node, nodes.Call)):
+            return
+        reported = []
+        for call in nodes_of(node, nodes.Call):
+            if callee_name(call) in ('fit', 'compile'):
+                loop = in_loop(call)
+                if loop is not None and not any(loop is r for r in reported):
+                    reported.append(loop)
+                    self.add_smell('TensorFlow', 'Memory Release Checker', loop, file_path)
 
-        has_intensive_ops = any(
-            op in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-            for op in memory_intensive_ops
-        )
-
-        has_memory_release = any(
-            'clear_session' in call.func.as_string() or
-            'reset_states' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
-        # Only suggest memory release for memory-intensive operations
-        if has_intensive_ops and not has_memory_release:
-            self.add_smell('TensorFlow', 'Memory Release Checker', node, file_path)
+    TF_LOGS = {'tensorflow.math.log', 'tensorflow.log', 'tensorflow.math.log2', 'tensorflow.experimental.numpy.log'}
 
     def detect_tf_mask(self, node: nodes.Module, file_path: str):
-        for call in node.nodes_of_class(nodes.Call):
-            if hasattr(call.func, 'as_string') and 'tf.math.log' in call.func.as_string():
-                # Check for potential zero/negative inputs
-                input_arg = call.args[0] if call.args else None
-                if input_arg and hasattr(input_arg, 'as_string'):  # Add null check
-                    risky_ops = ['zeros', 'random', 'subtract', 'sub']
-                    has_risky_input = any(
-                        op in input_arg.as_string()
-                        for op in risky_ops
-                    )
-
-                    has_mask = (
-                        len(call.args) > 1 or
-                        any(mask_op in node.as_string()
-                            for mask_op in ['where', 'clip', 'maximum'])
-                    )
-
-                    # Only report if there's risk of invalid input without masking
-                    if has_risky_input and not has_mask:
-                        self.add_smell('TensorFlow', 'Mask Missing Checker', call, file_path)
+        # tf.math.log(x) of an input that can be zero/negative, with no where/clip/maximum in the module
+        import_map = get_import_map(node)
+        if any(mask_op in source(node) for mask_op in ['where', 'clip', 'maximum']):
+            return
+        risky_ops = ['zeros', 'random', 'subtract', 'sub']
+        for call in nodes_of(node, nodes.Call):
+            if resolve_call_name(call, import_map) in self.TF_LOGS and len(call.args) == 1:
+                if any(op in source(call.args[0]) for op in risky_ops):
+                    self.add_smell('TensorFlow', 'Mask Missing Checker', call, file_path)
 
     def detect_tf_tensor_array(self, node: nodes.Module, file_path: str):
-        # Check for dynamic sequence operations
-        dynamic_ops = [
-            'RNN', 'LSTM', 'GRU', 'while_loop',
-            'map_fn', 'scan', 'dynamic'
-        ]
-
-        has_dynamic_ops = any(
-            op in node.as_string()
-            for op in dynamic_ops
-        )
-
-        using_python_list = any(
-            'append' in call.func.as_string() or
-            'extend' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
-        has_tensor_array = any(
-            'TensorArray' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
-
-        # Only suggest TensorArray for dynamic operations using Python lists
-        if has_dynamic_ops and using_python_list and not has_tensor_array:
-            self.add_smell('TensorFlow', 'Tensor Array Checker', node, file_path)
+        # A Python list grown inside a loop in a @tf.function: it is unrolled at trace time; tf.TensorArray is not
+        for func in nodes_of(node, nodes.FunctionDef):
+            decorators = func.decorators.nodes if func.decorators else []
+            if not any(source(d).split('(')[0].endswith('function') for d in decorators):
+                continue
+            if any('TensorArray' in source(c.func) for c in nodes_of(func, nodes.Call)):
+                continue
+            for call in nodes_of(func, nodes.Call):
+                if callee_name(call) in ('append', 'extend') and in_loop(call):
+                    self.add_smell('TensorFlow', 'Tensor Array Checker', call, file_path)
 
     def detect_tf_metrics(self, node: nodes.Module, file_path: str):
         # Check if it's a classification task
@@ -1212,20 +1164,22 @@ class FrameworkSpecificSmellDetector:
         ]
 
         is_classification = any(
-            indicator in node.as_string()
+            indicator in source(node)
             for indicator in classification_indicators
         )
 
+        # metrics=['accuracy'] is a string, not a call: look at the compile() metrics too
         has_basic_metrics = any(
-            metric in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            metric in source(call.func) or
+            callee_name(call) == 'compile' and metric in source(keyword(call, 'metrics') or call)
+            for call in nodes_of(node, nodes.Call)
             for metric in ['accuracy', 'precision', 'recall']
         )
 
         has_threshold_independent = any(
-            metric in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-            for metric in ['AUC', 'AUROCScore', 'PrecisionRecallCurve']
+            metric in source(call)
+            for call in nodes_of(node, nodes.Call)
+            for metric in ['AUC', 'auc', 'AUROCScore', 'PrecisionRecallCurve']
         )
 
         # Only suggest threshold-independent metrics for classification tasks
@@ -1234,24 +1188,12 @@ class FrameworkSpecificSmellDetector:
 
     def detect_tf_logging(self, node: nodes.Module, file_path: str):
         # Check if there's actual training to log
-        has_training_loop = any(
-            'model.fit' in call.func.as_string() or
-            'train' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-        )
+        has_training_loop = bool(self._fit_calls(node)) or any(
+            'train' in callee_name(call) for call in nodes_of(node, nodes.Call))
 
-        has_metrics = any(
-            metric in node.as_string().lower()
-            for metric in ['loss', 'accuracy', 'score', 'metric']
-        )
-
-        has_logging = any(
-            logger in node.as_string()
-            for logger in [
-                'tf.summary', 'TensorBoard', 'CSVLogger',
-                'WandbCallback', 'MLflow'
-            ]
-        )
+        text = source(node).lower()
+        has_metrics = any(metric in text for metric in ['loss', 'accuracy', 'score', 'metric'])
+        has_logging = any(logger in text for logger in ('tf.summary', 'tensorflow.summary') + self.EXPERIMENT_LOGGERS)
 
         # Only suggest logging for training with metrics
         if has_training_loop and has_metrics and not has_logging:
@@ -1264,26 +1206,21 @@ class FrameworkSpecificSmellDetector:
             'Dense', 'SeparableConv'
         ]
 
-        has_conv_layers = any(
-            layer in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-            for layer in conv_layers
-        )
-
         # Check if model is deep enough
         layer_count = len([
-            call for call in node.nodes_of_class(nodes.Call)
-            if any(layer in call.func.as_string()
+            call for call in nodes_of(node, nodes.Call)
+            if any(layer in source(call.func)
                    for layer in conv_layers)
         ])
 
+        # Any normalisation layer counts: BatchNormalization, LayerNormalization, GroupNormalization
         has_batch_norm = any(
-            'BatchNormalization' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'Normalization' in source(call.func)
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only suggest BatchNorm for deep networks with conv layers
-        if has_conv_layers and layer_count > 2 and not has_batch_norm:
+        if layer_count > 2 and not has_batch_norm:
             self.add_smell('TensorFlow', 'Batch Normalisation Checker', node, file_path)
 
     def detect_tf_dropout(self, node: nodes.Module, file_path: str):
@@ -1291,20 +1228,19 @@ class FrameworkSpecificSmellDetector:
         deep_layers = ['Dense', 'Conv', 'LSTM', 'GRU']
 
         layer_count = len([
-            call for call in node.nodes_of_class(nodes.Call)
-            if any(layer in call.func.as_string()
+            call for call in nodes_of(node, nodes.Call)
+            if any(layer in source(call.func)
                    for layer in deep_layers)
         ])
 
-        has_training = any(
-            'model.fit' in call.func.as_string() or
-            'training=True' in call.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+        has_training = bool(self._fit_calls(node)) or any(
+            'training=True' in source(call)
+            for call in nodes_of(node, nodes.Call)
         )
 
         has_dropout = any(
-            'Dropout' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'Dropout' in source(call.func)
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only suggest dropout for complex models during training
@@ -1319,20 +1255,20 @@ class FrameworkSpecificSmellDetector:
         ]
 
         is_vision_task = any(
-            indicator in node.as_string()
+            indicator in source(node)
             for indicator in vision_indicators
         )
 
-        has_training = any(
-            'model.fit' in call.func.as_string() or
-            'train' in call.func.as_string().lower()
-            for call in node.nodes_of_class(nodes.Call)
+        has_training = bool(self._fit_calls(node)) or any(
+            'train' in source(call.func).lower()
+            for call in nodes_of(node, nodes.Call)
         )
 
         has_augmentation = any(
-            aug in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
-            for aug in ['ImageDataGenerator', 'RandomFlip', 'RandomRotation', 'RandomZoom']
+            aug in source(call.func)
+            for call in nodes_of(node, nodes.Call)
+            for aug in ['ImageDataGenerator', 'RandomFlip', 'RandomRotation', 'RandomZoom', 'RandomCrop',
+                        'RandomTranslation', 'RandomContrast', 'image.random_', 'image.flip_']
         )
 
         # Only suggest augmentation for vision tasks during training
@@ -1340,51 +1276,43 @@ class FrameworkSpecificSmellDetector:
             self.add_smell('TensorFlow', 'Data Augmentation Checker', node, file_path)
 
     def detect_tf_lr_scheduler(self, node: nodes.Module, file_path: str):
-        # Check if there's a long training process
-        has_epochs = False
-        for loop in node.nodes_of_class(nodes.For):  # not `node`: that would shadow the module below
-            if 'epoch' in loop.as_string().lower():
-                try:
-                    if hasattr(loop.iter, 'args') and len(loop.iter.args) > 0:
-                        epoch_num = int(loop.iter.args[0].value)
-                        has_epochs = has_epochs or epoch_num > 5  # Suggest scheduler for longer training
-                except (AttributeError, ValueError):
-                    continue
+        # A long training run: an epoch loop over more than 5 epochs, or fit(epochs=N) with N > 5
+        long_fit = any((int_value(keyword(c, 'epochs')) or 0) > 5 for c in self._fit_calls(node))
 
         has_optimizer = any(
-            'optimizer' in call.func.as_string().lower()
-            for call in node.nodes_of_class(nodes.Call)
-        )
+            'optimizer' in source(call.func).lower()
+            for call in nodes_of(node, nodes.Call)
+        ) or any(kw.arg == 'optimizer' for call in nodes_of(node, nodes.Call) for kw in call.keywords)
 
         has_scheduler = any(
-            'LearningRateScheduler' in call.func.as_string() or
-            'schedules' in call.func.as_string() or
-            'ReduceLROnPlateau' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'LearningRateScheduler' in source(call.func) or
+            'schedules' in source(call.func) or
+            'ReduceLROnPlateau' in source(call.func)
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only suggest scheduler for long training processes
-        if has_epochs and has_optimizer and not has_scheduler:
+        if (self._longest_epoch_loop(node) > 5 or long_fit) and has_optimizer and not has_scheduler:
             self.add_smell('TensorFlow', 'Learning Rate Scheduler Checker', node, file_path)
 
     def detect_tf_model_evaluation(self, node: nodes.Module, file_path: str):
         # Check if there's a model to evaluate
         has_model = any(
-            'model' in call.func.as_string() or
-            'Sequential' in call.func.as_string() or
-            'Model(' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'model' in source(call.func) or
+            'Sequential' in source(call.func) or
+            'Model(' in source(call.func)
+            for call in nodes_of(node, nodes.Call)
         )
 
         has_test_data = any(
-            data in node.as_string().lower()
+            data in source(node).lower()
             for data in ['test', 'val', 'valid', 'evaluation']
         )
 
         has_evaluation = any(
-            'evaluate' in call.func.as_string() or
-            'predict' in call.func.as_string()
-            for call in node.nodes_of_class(nodes.Call)
+            'evaluate' in source(call.func) or
+            'predict' in source(call.func)
+            for call in nodes_of(node, nodes.Call)
         )
 
         # Only suggest evaluation when there's a model and test data

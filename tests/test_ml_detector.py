@@ -110,10 +110,24 @@ class TestMagicNumbers:
         code = """\
             import pandas as pd
             df = pd.read_csv('data.csv')
-            threshold = 0.75
+            if df['score'].mean() > 0.87:
+                df['scaled'] = df['pixels'] / 255.0
         """
         smells = detect(ml_tmp, code)
-        assert has_smell_containing(smells, "magic number")
+        assert sorted(s["smell"] for s in smells if "Magic number" in s["smell"]) == [
+            "Magic number detected: 0.87", "Magic number detected: 255.0"]
+
+    def test_no_smell_for_literal_bound_to_a_name(self, ml_tmp):
+        # Naming the literal is the fix for a magic number, so the assignment itself is not one
+        code = """\
+            import pandas as pd
+            threshold = 0.75
+            SECONDS_PER_DAY = 60 * 60 * 24
+            df = pd.read_csv('data.csv')
+            flagged = df[df['score'] > threshold]
+        """
+        smells = detect(ml_tmp, code)
+        assert not has_smell_containing(smells, "magic number")
 
     def test_no_smell_for_acceptable_constant(self, ml_tmp):
         code = """\
@@ -233,11 +247,9 @@ class TestCrossValidation:
 
 class TestReproducibility:
     def test_detects_missing_seed(self, tmp_path):
-        """Use a file path with no skip-pattern keywords in it."""
-        import textwrap as _tw
-        # Build a path that avoids ALL skip patterns (including 'data' in AppData)
-        safe_dir = tmp_path
-        code = _tw.dedent("""\
+        # File-name heuristics look at the name only, so pytest's tmp dir (".../test_detects_missing_seed0/")
+        # no longer switches the check off
+        code = textwrap.dedent("""\
             from sklearn.linear_model import LogisticRegression
             X = [[1, 2], [3, 4], [5, 6], [7, 8]]
             y = [0, 1, 0, 1]
@@ -246,20 +258,11 @@ class TestReproducibility:
             preds = clf.predict(X)
             score = clf.score(X, y)
         """)
-        p = safe_dir / "training.py"
+        p = tmp_path / "training.py"
         p.write_text(code)
-        path = str(p)
-        # If path has skip pattern, test that the detector at least runs
-        skip_patterns = ['test_', 'utils', 'helper', 'data', 'preprocess',
-                         'explore', 'analyze', 'visualize', 'inference']
-        if any(pat in path.lower() for pat in skip_patterns):
-            pytest.skip(
-                f"Temp path {path!r} matches a skip pattern — "
-                "reproducibility check cannot be verified in this environment"
-            )
         detector = ML_SmellDetector()
-        detector.detect_smells(path)
-        assert has_smell_containing(detector.smells, "seed")
+        detector.detect_smells(str(p))
+        assert has_smell_containing(detector.smells, "no random seed")
 
     def test_no_smell_with_seed_set(self, ml_tmp):
         code = """\
@@ -431,3 +434,17 @@ class TestMLDetectorReport:
             assert r["framework"] == "General ML"
             assert "name" in r
             assert "location" in r
+
+
+class TestHardcodedPathFragments:
+    def test_fragments_joined_to_a_base_are_not_reported(self, ml_tmp):
+        code = """\
+            import os
+            import pandas as pd
+            root = os.environ['DATA_ROOT']
+            a = pd.read_csv(root + '/train.csv')
+            b = pd.read_csv(os.path.join(root, 'raw/test.csv'))
+            c = pd.read_csv('/srv/data/valid.csv')
+        """
+        smells = detect(ml_tmp, code)
+        assert [s["line_number"] for s in smells if "Hardcoded file path" in s["smell"]] == [6]

@@ -8,4 +8,5 @@ exclude =
     dist,
     *.egg-info,
     docs,
-    .venv
+    .venv,
+    tests/corpus

@@ -228,11 +228,7 @@ class TestMissingAxisSpecification:
 
 class TestCopyViewConfusion:
     def test_detects_slice_modified_without_copy(self, tmp_py):
-        """The detector walks up the AST to find modifications, which only works
-        when the slice assignment is nested inside another assignment expression.
-        Top-level / function-level sibling statements are not detected by current logic.
-        This is a known limitation; the negative (no-smell-with-copy) test is the
-        reliable assertion here."""
+        # Basic slicing returns a view: writing to `view` also changes `original`
         code = """\
             import numpy as np
             original = np.array([1, 2, 3, 4, 5])
@@ -240,8 +236,21 @@ class TestCopyViewConfusion:
             view += 10
         """
         smells = detect(tmp_py, code)
-        # The detector has a known limitation: it cannot track sibling-statement
-        # modifications at module/function scope, so no smell is raised here.
+        assert [s["line_number"] for s in smells if s["name"] == "Copy-View Confusion"] == [3]
+
+    def test_no_smell_for_list_slices_or_fancy_indexing(self, tmp_py):
+        code = """\
+            import numpy as np
+            items = [1, 2, 3]
+            part = items[1:3]
+            part[0] = 9
+            arr = np.arange(5)
+            picked = arr[[0, 1]]
+            picked[0] = 7
+            arr = arr[1:]
+            arr[0] = 3
+        """
+        smells = detect(tmp_py, code)
         assert "Copy-View Confusion" not in names(smells)
 
     def test_no_smell_with_explicit_copy(self, tmp_py):

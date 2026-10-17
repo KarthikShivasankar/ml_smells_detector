@@ -1,7 +1,9 @@
 Features
 ========
 
-The ML Code Smell Detector checks for various code smells across different categories. Here's a detailed breakdown of the smells it detects:
+The ML Code Smell Detector checks for various code smells across different categories. Here's a detailed breakdown of the smells it detects.
+Every rule has a stable id (``ml_smell_detector rules`` lists them with how-to-fix text); findings about one
+statement carry its line, file-level heuristics are reported at line 0.
 
 Framework-Specific Smells
 -------------------------
@@ -13,23 +15,29 @@ General
 Pandas
 ^^^^^^
 1. **Unnecessary Iteration**: Detects use of `.iterrows()` which is often slower than vectorized operations.
-2. **DataFrame Iteration Modification**: Identifies modifications to DataFrames during iteration, which can lead to unexpected behavior.
-3. **Chain Indexing**: Detects chained indexing, which can lead to performance issues and unexpected behavior.
-4. **Datatype Checker**: Ensures explicit data type setting when importing data to prevent automatic type inference issues.
-5. **Column Selection Checker**: Encourages selecting necessary columns after importing DataFrames for clarity and performance.
-6. **Merge Parameter Checker**: Checks for proper use of parameters in merge operations to prevent data loss.
-7. **InPlace Checker**: Discourages use of `inplace=True` to prevent accidental data loss.
+2. **DataFrame Iteration Modification**: Writes to the frame being iterated (``df.loc[i, 'a'] = v`` inside ``for i, row in df.iterrows()``) or to the row copy (``row['a'] = v``, which has no effect on ``df``).
+3. **Chain Indexing**: Chained *assignment* with a column label (``df['a'][0] = v``, ``df[mask]['a'] = v``); chained reads and nested lists (``grid[i][j] = v``) are not reported.
+4. **Datatype Checker**: ``pd.read_csv`` without ``dtype=`` in a module that groups, merges or sorts the data.
+5. **Column Selection Checker**: A ``pd.read_*`` call without ``usecols=``/``columns=`` whose columns are never narrowed down (``df[['a', 'b']]``) afterwards.
+6. **Merge Parameter Checker**: ``pd.merge(a, b)`` or ``a.merge(b)`` without ``how``/``on``/``validate`` (or ``left_on``/``right_on``/``*_index``).
+7. **InPlace Checker**: Every ``inplace=True`` call; ``df2 = df.dropna(inplace=True)`` (``df2`` is ``None``) included.
 8. **DataFrame Conversion Checker**: Encourages use of `.to_numpy()` instead of `.values` for future compatibility.
 
 NumPy
 ^^^^^
-1. **NaN Equality Checker**: Detects improper NaN comparisons and suggests using `np.isnan()`.
-2. **Randomness Control Checker**: Checks for proper random seed setting for reproducibility.
+1. **NaN Equality Checker**: ``x == np.nan`` / ``!=`` on either side, also ``math.nan`` and ``float('nan')``; suggests ``np.isnan()``.
+2. **Randomness Control Checker**: Draws from ``np.random.*`` without ``np.random.seed()`` (reported at the first draw), and ``np.random.default_rng()`` / ``RandomState()`` created without a seed.
+3. **Array Creation Efficiency**: ``np.array``/``zeros``/``ones``/``empty`` without ``dtype``.
+4. **Inefficient Operations**: Reductions inside loops, and arrays grown in a loop (``np.concatenate``/``append``/``vstack``/``hstack``), which is quadratic.
+5. **Dtype Consistency**: Arithmetic mixing numpy int and float scalar types.
+6. **Broadcasting Risk**: Arithmetic between reshaped/transposed arrays.
+7. **Copy-View Confusion**: ``view = arr[a:b]`` (basic slicing returns a view) followed by a write to ``view``, which also modifies ``arr``.
+8. **Missing Axis Specification**: numpy reductions (``sum``, ``mean``, ``max``, ``argmax``, ``std``, ...) called without ``axis``.
 
 Scikit-learn
 ^^^^^^^^^^^^
-1. **Scaler Missing Checker**: Ensures scaling is applied before scale-sensitive operations.
-2. **Pipeline Checker**: Encourages use of Pipelines to prevent data leakage.
+1. **Scaler Missing Checker**: A scale-sensitive estimator (SVMs, k-NN, k-means, PCA, linear models, MLPs, ...) in a module that never scales features.
+2. **Pipeline Checker**: Preprocessing and model steps without ``Pipeline``/``make_pipeline``.
 3. **Cross Validation Checker**: Checks for proper use of cross-validation techniques.
 4. **Randomness Control Checker**: Ensures consistent random state setting across estimators.
 5. **Verbose Mode Checker**: Encourages use of verbose mode for long-running processes.
@@ -43,9 +51,9 @@ TensorFlow
 1. **Randomness Control Checker**: Checks for proper random seed setting.
 2. **Early Stopping Checker**: Encourages use of early stopping to prevent overfitting.
 3. **Checkpointing Checker**: Ensures model checkpoints are saved during training.
-4. **Memory Release Checker**: Checks for proper memory clearing, especially in loops.
+4. **Memory Release Checker**: Models built or trained inside a loop without ``tf.keras.backend.clear_session()``.
 5. **Mask Missing Checker**: Ensures proper masking in operations like `tf.math.log`.
-6. **Tensor Array Checker**: Encourages use of `tf.TensorArray` for dynamic tensor lists.
+6. **Tensor Array Checker**: A Python list grown in a loop inside a ``@tf.function``; use ``tf.TensorArray``.
 7. **Dependent Threshold Checker**: Similar to Scikit-learn's checker.
 8. **Logging Checker**: Encourages use of TensorBoard or other logging mechanisms.
 9. **Batch Normalisation Checker**: Checks for use of batch normalization layers.
@@ -53,8 +61,8 @@ TensorFlow
 11. **Data Augmentation Checker**: Checks for data augmentation techniques.
 12. **Learning Rate Scheduler Checker**: Encourages use of learning rate schedules.
 13. **Model Evaluation Checker**: Ensures proper model evaluation practices.
-14. **Unit Testing Checker**: Checks for TensorFlow-specific unit tests.
-15. **Exception Handling Checker**: Similar to Scikit-learn's checker.
+14. **Unit Testing Checker**: Checks that a test file exists for a module that trains or evaluates a model.
+15. **Exception Handling Checker**: ``tf.keras.models.load_model`` / ``tf.saved_model.load|save`` outside ``try``.
 
 PyTorch
 ^^^^^^^
@@ -62,21 +70,19 @@ PyTorch
 2. **Deterministic Algorithm Usage Checker**: Encourages use of deterministic algorithms.
 3. **Randomness Control Checker (PyTorch-Dataloader)**: Checks for proper random seed setting in DataLoader.
 4. **Mask Missing Checker**: Similar to TensorFlow's checker.
-5. **Net Forward Checker**: Discourages direct calls to `net.forward()`.
-6. **Gradient Clear Checker**: Ensures gradients are cleared before each backward pass.
+5. **Net Forward Checker**: Any ``x.forward(...)`` call, which bypasses hooks; ``super().forward(...)`` is fine.
+6. **Gradient Clear Checker**: ``loss.backward()`` with an optimizer but no ``zero_grad()``.
 7. **Batch Normalisation Checker**: Similar to TensorFlow's checker.
 8. **Dropout Usage Checker**: Similar to TensorFlow's checker.
 9. **Data Augmentation Checker**: Checks for use of torchvision transforms.
 10. **Learning Rate Scheduler Checker**: Similar to TensorFlow's checker.
 11. **Logging Checker**: Checks for use of tensorboardX or similar logging tools.
 12. **Model Evaluation Checker**: Ensures model is set to evaluation mode when appropriate.
-13. **Unit Testing Checker**: Similar to Scikit-learn's checker.
-14. **Exception Handling Checker**: Similar to Scikit-learn's checker.
 
 General ML Smells
 -----------------
 1. **Data Leakage**: Checks for potential data leakage issues.
-2. **Magic Numbers**: Identifies hard-coded constants that should be named variables.
+2. **Magic Numbers**: Unnamed numeric literals in comparisons and arithmetic (``if p > 0.87``, ``x / 255``). Binding a literal to a name is the fix, so ``threshold = 0.75`` is not reported.
 3. **Feature Scaling**: Ensures consistent feature scaling across the dataset.
 4. **Cross Validation**: Checks for proper use of cross-validation techniques.
 5. **Imbalanced Dataset Handling**: Identifies if techniques for handling imbalanced datasets are used.
@@ -88,7 +94,7 @@ General ML Smells
 11. **Unused Features**: Identifies potentially unused features.
 12. **Overfit-Prone Practices**: Checks for practices that might lead to overfitting.
 13. **Error Handling**: Ensures proper error handling in data processing.
-14. **Hardcoded Filepaths**: Identifies hardcoded file paths.
+14. **Hardcoded Filepaths**: Absolute/relative paths and ``dir/file.ext`` strings; URLs, MIME types, Hub ids and fragments joined onto a base (``root + '/x.csv'``) are not reported.
 15. **Documentation**: Checks for presence of docstrings and comments.
 
 Hugging Face-Specific Smells
@@ -101,5 +107,5 @@ Hugging Face-Specific Smells
 6. **Distributed Training**: Checks for configuration of distributed training.
 7. **Mixed Precision Training**: Encourages use of mixed precision training for performance.
 8. **Gradient Accumulation**: Checks for gradient accumulation for large batch sizes.
-9. **Learning Rate Scheduling**: Ensures use of learning rate schedulers.
+9. **Learning Rate Scheduling**: A custom training loop (``loss.backward()`` + ``optimizer.step()``) without a scheduler. ``Trainer`` is not reported: it always applies ``lr_scheduler_type`` (default ``linear``).
 10. **Early Stopping**: Checks for implementation of early stopping.

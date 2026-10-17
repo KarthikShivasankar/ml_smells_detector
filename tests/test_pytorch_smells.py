@@ -409,3 +409,36 @@ class TestPyTorchFrameworkLabel:
         smells = detect(tmp_py, code)
         pytorch_smells = [s for s in smells if s["framework"] == "PyTorch"]
         assert len(pytorch_smells) > 0
+
+
+class TestNetForwardChecker:
+    def test_reports_direct_forward_on_modules_only(self, tmp_py):
+        code = """\
+            import torch
+            from torch import nn
+
+
+            class Block(nn.Module):
+                def forward(self, x):
+                    return x
+
+                def twice(self, x):
+                    return self.forward(self.forward(x))
+
+
+            class Net(Block):
+                def __init__(self):
+                    super().__init__()
+                    self.encoder = Block()
+
+                def forward(self, x):
+                    y = super().forward(x)
+                    return self.encoder.forward(y)
+
+
+            model = Net()
+            out = model.forward(torch.zeros(1))
+            remote = rref.rpc_async().forward(out)
+        """
+        smells = detect(tmp_py, code)
+        assert [s["line_number"] for s in smells if s["name"] == "Net Forward Checker"] == [20, 24]

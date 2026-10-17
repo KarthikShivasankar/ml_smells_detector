@@ -83,17 +83,37 @@ Reports are written to `analysis_report.txt` and `analysis_report.csv` in the ou
 ## Usage
 
 ```
-ml_smell_detector analyze <path> [options]
+ml_smell_detector analyze <path> [<path> ...] [options]
+python -m ml_code_smell_detector analyze <path> ...     # same thing
 ```
 
 | Argument | Description |
 |---|---|
-| `path` | Path to a `.py` file or a directory |
-| `--output-dir DIR` | Directory to write reports to (default: `output/`) |
-| `--ignore DIR [DIR ...]` | Directory names to skip during analysis |
-| `--format {text,json}` | `text` (default) writes the reports below; `json` prints one JSON document to stdout and writes no files |
+| `path ...` | One or more `.py` files or directories; `-` reads source from stdin |
+| `--format {text,json,sarif}` | `text` (default) writes the reports below; `json` / `sarif` print one document to stdout and write no files |
+| `--output-dir DIR` | Directory to write text reports to (default: `output/`) |
+| `--ignore DIR [DIR ...]` | Directory names to skip (`.venv`, `venv`, `.git`, `node_modules`, `__pycache__`, `build`, `dist`, caches and hidden directories are always skipped) |
+| `--select RULE [RULE ...]` | Only report rule ids starting with these prefixes, e.g. `ML.PANDAS ML.DATA_LEAKAGE` |
+| `--ignore-rules RULE [RULE ...]` | Drop rule ids starting with these prefixes, e.g. `ML.MISSING_DOCSTRING` |
+| `--stdin-filename NAME` | File name to analyse stdin as (default `stdin.py`) |
+| `--fail-on-findings` | Exit with status 1 if anything is reported (CI gates, agent loops) |
+| `--version` | Print the version |
 
-`ml_smell_detector rules` prints every rule id the detectors can emit, as JSON.
+Exit codes: `0` success, `1` findings with `--fail-on-findings`, `2` usage error (e.g. a path that does not exist).
+
+`ml_smell_detector rules` prints every rule id the detectors can emit, with how-to-fix and benefit text, as JSON.
+
+### Silencing findings
+
+Add a comment to the analysed code, by rule id or rule-id prefix:
+
+```python
+x = df.values  # mlscent: ignore[ML.PANDAS.DATAFRAME_CONVERSION_CHECKER]
+df.dropna(inplace=True)  # mlscent: ignore            <- every rule on this line
+# mlscent: ignore-file[ML.SCIKITLEARN.UNIT_TESTING_CHECKER, ML.MISSING_DOCSTRING]
+```
+
+File-level findings (reported at line 0) can only be silenced with `ignore-file` or `--ignore-rules`.
 
 ### Examples
 
@@ -109,6 +129,12 @@ ml_smell_detector analyze ./project/ --ignore tests notebooks __pycache__
 
 # Analyze a Jupyter notebook export
 ml_smell_detector analyze ./exported_notebook.py --output-dir ./nb_report/
+
+# Only the files changed on this branch, as JSON
+git diff --name-only main -- '*.py' | xargs ml_smell_detector analyze --format json
+
+# Pipe code in
+cat train.py | ml_smell_detector analyze - --format json --select ML.DATA_LEAKAGE ML.SCIKITLEARN
 ```
 
 ---
@@ -153,11 +179,22 @@ Add to a GitHub Actions workflow (no ML dependencies needed on the runner):
     pip install ml-code-smell-detector
     ml_smell_detector analyze ./src/ --output-dir ./smell_report/ --ignore tests
 - name: Upload smell report
-  uses: actions/upload-artifact@v3
+  uses: actions/upload-artifact@v7
   with:
     name: smell-report
     path: smell_report/
 ```
+
+Show findings as GitHub code-scanning alerts with SARIF:
+
+```yaml
+- run: ml_smell_detector analyze ./src/ --format sarif > mlscent.sarif
+- uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: mlscent.sarif
+```
+
+Gate a build on specific rules: `ml_smell_detector analyze src/ --format json --select ML.DATA_LEAKAGE --fail-on-findings`.
 
 ### 5. Use as a Python library
 
@@ -179,25 +216,59 @@ for DetectorClass in [FrameworkSpecificSmellDetector, HuggingFaceSmellDetector, 
 
 ### 6. Use from an agent, harness or script
 
-`ml_code_smell_detector.api` gives one finding schema for all three detectors, stable rule ids and no
-stderr noise (detector errors are returned, not printed):
+MLScent is built to be called by other tools: deterministic output, stable rule ids, nothing printed by the
+library, meaningful exit codes, and no ML framework needed at runtime (it only parses code).
+
+**Python API** (`ml_code_smell_detector.api`, also importable from the package root):
 
 ```python
-from ml_code_smell_detector.api import analyze_file, analyze_source, list_rules
+from ml_code_smell_detector import analyze_file, analyze_paths, analyze_source, list_rules
 
-result = analyze_source(open("train.py").read())   # or analyze_file("train.py")
-for f in result["findings"]:                       # sorted by (line, rule_id); line 0 = file-level
-    print(f["rule_id"], f["line"], f["message"])   # e.g. ML.PANDAS.CHAIN_INDEXING 12 Chain Indexing
-assert not result["errors"]                        # parse/detector errors end up here
+report = analyze_paths(["src/", "train.py"], select=["ML.PANDAS"], ignore=["ML.PANDAS.DATATYPE_CHECKER"])
+for result in report["files"]:
+    for f in result["findings"]:                   # sorted by (line, rule_id); line 0 = file-level
+        print(result["file"], f["line"], f["rule_id"], f["how_to_fix"])
+print(report["summary"])                           # {"files", "files_with_findings", "findings", "suppressed", "errors", "by_rule"}
+
+result = analyze_source(code, filename="train.py") # one file from a string; filename matters (see below)
 ```
 
-Each finding has `rule_id`, `detector` (`framework` / `huggingface` / `general`), `framework`, `name`, `message`,
-`line`, `snippet`, `how_to_fix`, `benefits`. Rule ids are `ML.<FRAMEWORK>.<NAME>` for framework rules,
-`ML.HF.<NAME>` for Hugging Face rules and short ids such as `ML.MAGIC_NUMBER` for general rules; `list_rules()`
-(or `ml_smell_detector rules`) lists them all. `analyze_source` uses a neutral temporary file name because some
-general checks are skipped when the path contains words like `data`, `utils` or `test_`.
+**CLI**: `ml_smell_detector analyze src/ --format json` prints the same report; `--format sarif` prints SARIF 2.1.0.
 
-From a shell: `ml_smell_detector analyze src/ --format json | jq '.files[].findings[].rule_id'`.
+Report document (`schema_version` is bumped on incompatible changes):
+
+```json
+{
+  "tool": "ml-code-smell-detector", "version": "0.1.2", "schema_version": 1,
+  "files": [{
+    "file": "src/train.py",
+    "findings": [{
+      "rule_id": "ML.DATA_LEAKAGE", "detector": "general", "framework": "General ML",
+      "name": "Potential data leakage", "message": "Potential data leakage: Preprocessing applied before train-test split",
+      "line": 14, "snippet": "StandardScaler().fit_transform(features)",
+      "how_to_fix": "Split the data first, then fit preprocessing on the training split only (or put it in a Pipeline).",
+      "benefits": "Keeps test data out of fitted statistics, so evaluation scores are honest."
+    }],
+    "errors": [], "suppressed": 0
+  }],
+  "summary": {"files": 1, "files_with_findings": 1, "findings": 1, "suppressed": 0, "errors": 0,
+              "by_rule": {"ML.DATA_LEAKAGE": 1}}
+}
+```
+
+Notes for tool builders:
+
+- Rule ids are `ML.<FRAMEWORK>.<NAME>` for framework rules (`ML.PYTORCH.GRADIENT_CLEAR_CHECKER`), `ML.HF.<NAME>`
+  for Hugging Face rules and short ids such as `ML.MAGIC_NUMBER` for general rules. They are stable; filter and
+  suppress by them. `list_rules()` / `ml_smell_detector rules` is the catalogue.
+- `line` is 1-based; `0` marks a file-level heuristic (e.g. "no logging in a training script") rather than a
+  specific statement. Treat line findings as more precise than file-level ones.
+- Parse and detector errors are returned in `errors` (one per problem), never raised or printed; a crash in one
+  check does not stop the others.
+- Some general checks key off the file *name* (not its directory): files named like `test_*.py`, `*utils*` or
+  `*data*` skip checks that do not apply to them. Pass a realistic `filename=` to `analyze_source`.
+- The detectors are heuristics over the AST (no type inference). Expect some false positives on file-level
+  rules; use `--select` to focus on the precise ones, or suppression comments to accept a finding.
 
 ---
 
@@ -302,7 +373,13 @@ The same applies to `pandas`, `numpy`, `torch`, `tensorflow`, and `transformers`
 - Missing eval mode
 
 **TensorFlow**
-- Missing random seed, early stopping, checkpointing, memory management, logging
+- Missing random seed, early stopping, checkpointing, logging
+- Models built or trained in a loop without `clear_session()` (memory release)
+- Unmasked `tf.math.log` of risky inputs
+- Python lists grown in a loop inside `@tf.function` (use `tf.TensorArray`)
+- Threshold-dependent metrics only (no AUC)
+- Missing batch normalisation, dropout, data augmentation, learning-rate scheduling, evaluation
+- Missing unit tests; `load_model` / `saved_model` I/O without exception handling
 
 ---
 
@@ -347,7 +424,7 @@ This section is for contributors and maintainers of the package itself.
 ### Prerequisites
 
 - [uv](https://docs.astral.sh/uv/) (package/environment manager)
-- Python 3.10+ (CI tests 3.10–3.13)
+- Python 3.10+ (CI tests 3.10–3.14)
 
 ### Setup
 
@@ -381,7 +458,7 @@ AGENTS.md                # quick command/convention reference for AI agents
 ```bash
 uv run ruff check . --fix                       # lint + auto-fix (incl. import order)
 uv run python -m flake8 ml_code_smell_detector tests
-uv run python -m pytest tests/                  # 212 tests
+uv run python -m pytest tests/                  # unit tests, corpus and end-to-end CLI tests
 uv build && uvx twine check dist/*              # sanity-check the package
 ```
 
@@ -391,10 +468,14 @@ committing. CI enforces all of this on every push and PR.
 ### Adding a new smell / detector
 
 1. Add detection logic to the relevant class in `ml_code_smell_detector/detectors/`.
-2. Each smell dict must include the keys: `name`, `framework`, `fix`, `benefits`, `location`.
-3. Add tests under `tests/` for **both** detection and non-detection cases.
-4. Document the new smell in `docs/source/features.rst` and the "Detected Smells" list above.
-5. Run the development loop and open a PR.
+2. Framework rules: add the rule's entry to `get_smells()` and report it with `add_smell(framework, name, node, ...)`.
+   Hugging Face rules: add it to `HuggingFaceSmellDetector.RULES`. General rules: add a `(message prefix, rule id,
+   how to fix, benefits)` row to `ML_SmellDetector.RULES`. Register the check in the detector's `run_checks(...)` list.
+3. Report at the most specific node (the offending call), not the module, whenever the rule is about one statement.
+4. Add tests under `tests/` for **both** detection and non-detection cases, and a case in `tests/corpus/`
+   (annotated with `# expect: RULE_ID`) — see "Test Structure" below.
+5. Document the new smell in `docs/source/features.rst` and the "Detected Smells" list above.
+6. Run the development loop and open a PR.
 
 ### Coding conventions
 
@@ -408,7 +489,7 @@ committing. CI enforces all of this on every push and PR.
 
 ## Running Tests
 
-The test suite has **212 tests** covering all three detector classes, utilities, and the CLI.
+The test suite covers all three detector classes, the API, utilities and the CLI, plus an end-to-end corpus.
 
 ```bash
 # Run the full test suite
@@ -449,6 +530,22 @@ python -m pytest tests/ --cov=ml_code_smell_detector --cov-report=term-missing
 | `test_ml_detector.py` | General ML smells (leakage, magic numbers, CV, reproducibility, etc.) | ~22 |
 | `test_utils.py` | AST utility functions | ~30 |
 | `test_cli.py` | CLI argument parsing, file collection, report writing | ~10 |
+| `test_api.py` | Unified findings, suppression comments, rule filters, multi-path reports | ~12 |
+| `test_corpus.py` | End-to-end corpus: every file in `tests/corpus/` must produce exactly its annotated findings | per file |
+| `test_e2e_cli.py` | The CLI run as a subprocess: JSON/SARIF output, exit codes, stdin, rule selection | ~8 |
+
+#### The corpus
+
+`tests/corpus/*.py` are realistic ML scripts annotated with the findings they must produce:
+
+```python
+sales.dropna(inplace=True)  # expect: ML.PANDAS.INPLACE_CHECKER
+# expect-file: ML.PYTORCH.LOGGING_CHECKER      <- a file-level (line 0) finding
+```
+
+`test_corpus.py` fails on any missing finding (recall regression) or extra finding (precision regression).
+`clean_pipeline.py` must stay finding-free. After an intentional rule change, review the new output and update
+the annotations. The corpus is excluded from ruff/flake8 because it is smelly on purpose.
 
 ---
 
@@ -505,7 +602,8 @@ uv run sphinx-build -b html docs/source docs/build/html
 ### Published docs
 
 Read the Docs rebuilds automatically on every push to `main` using
-`.readthedocs.yaml` (Python 3.10) and `docs/requirements.txt`. When you change
+`.readthedocs.yaml` (Ubuntu 24.04, Python 3.13; installs the package so autodoc can import it) and
+`docs/requirements.txt`. CI builds the docs the same way with warnings as errors. When you change
 the public API or add a detector, update `features.rst` and the relevant
 `detectors/*.rst` so the published docs stay accurate.
 
@@ -517,7 +615,9 @@ GitHub Actions workflows live in `.github/workflows/`:
 
 - **`ci.yml`** — runs on every push and pull request to `main`:
   - **Lint**: `ruff check` + `flake8`
-  - **Test**: full suite across Python 3.10, 3.11, 3.12, and 3.13
+  - **Test**: full suite (unit, corpus, CLI end-to-end) across Python 3.10, 3.11, 3.12, 3.13 and 3.14
+  - **Oldest deps**: the suite on Python 3.10 with the declared minimums (astroid 3.0.0, tqdm 4.60.0)
+  - **Docs**: Sphinx build as on Read the Docs, warnings are errors
   - **Build**: `uv build` + `twine check` to validate the distribution
 - **`publish.yml`** — publishes to PyPI when a GitHub Release is published (see below).
 

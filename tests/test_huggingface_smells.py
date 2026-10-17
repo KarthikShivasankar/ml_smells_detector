@@ -62,6 +62,26 @@ class TestModelVersioning:
         smells = detect(tmp_py, code)
         assert "Model versioning not specified" in smell_texts(smells)
 
+    def test_detects_concrete_model_classes_and_pipeline(self, tmp_py):
+        code = """\
+            from transformers import BertForMaskedLM, GPT2LMHeadModel, pipeline
+            a = BertForMaskedLM.from_pretrained('bert-base-uncased')
+            b = GPT2LMHeadModel.from_pretrained('gpt2')
+            c = pipeline('text-generation', model='gpt2')
+        """
+        smells = detect(tmp_py, code)
+        assert [s["line_number"] for s in smells if s["smell"] == "Model versioning not specified"] == [2, 3, 4]
+
+    def test_no_smell_for_local_checkpoints_configs_and_tokenizers(self, tmp_py):
+        code = """\
+            from transformers import AutoConfig, AutoModel, AutoTokenizer
+            model = AutoModel.from_pretrained('./checkpoints/best')
+            config = AutoConfig.from_pretrained('bert-base-uncased')
+            tok = AutoTokenizer.from_pretrained('bert-base-uncased', max_length=128)
+        """
+        smells = detect(tmp_py, code)
+        assert "Model versioning not specified" not in smell_texts(smells)
+
 
 # ---------------------------------------------------------------------------
 # Tokenizer Caching
@@ -177,12 +197,21 @@ class TestDeterministicTokenization:
 class TestEfficientDataLoading:
     def test_detects_missing_efficient_loading(self, tmp_py):
         code = """\
-            from transformers import AutoModel
+            from transformers import AutoModel, Trainer
             model = AutoModel.from_pretrained('bert-base-uncased')
             data = [{'text': 'hello'}]
+            Trainer(model=model, train_dataset=data).train()
         """
         smells = detect(tmp_py, code)
         assert "Efficient data loading not detected" in smell_texts(smells)
+
+    def test_no_smell_for_inference_only_script(self, tmp_py):
+        code = """\
+            from transformers import pipeline
+            classifier = pipeline('sentiment-analysis', model='distilbert-base-uncased', revision='main')
+            print(classifier('hello'))
+        """
+        assert detect(tmp_py, code) == []
 
     def test_no_smell_with_load_dataset(self, tmp_py):
         code = """\
@@ -213,11 +242,11 @@ class TestMixedPrecisionTraining:
     def test_detects_training_without_fp16(self, tmp_py):
         code = """\
             from transformers import Trainer, TrainingArguments
-            TrainingArguments = TrainingArguments(
+            args = TrainingArguments(
                 output_dir='./results',
                 num_train_epochs=3,
             )
-            trainer = Trainer(args=TrainingArguments)
+            trainer = Trainer(args=args)
             trainer.train()
         """
         smells = detect(tmp_py, code)
@@ -226,12 +255,12 @@ class TestMixedPrecisionTraining:
     def test_no_smell_with_fp16(self, tmp_py):
         code = """\
             from transformers import Trainer, TrainingArguments
-            TrainingArguments = TrainingArguments(
+            args = TrainingArguments(
                 output_dir='./results',
                 num_train_epochs=3,
                 fp16=True,
             )
-            trainer = Trainer(args=TrainingArguments)
+            trainer = Trainer(args=args)
             trainer.train()
         """
         smells = detect(tmp_py, code)
@@ -246,11 +275,11 @@ class TestGradientAccumulation:
     def test_detects_training_without_grad_accum(self, tmp_py):
         code = """\
             from transformers import Trainer, TrainingArguments
-            TrainingArguments = TrainingArguments(
+            args = TrainingArguments(
                 output_dir='./results',
                 num_train_epochs=3,
             )
-            trainer = Trainer(args=TrainingArguments)
+            trainer = Trainer(args=args)
             trainer.train()
         """
         smells = detect(tmp_py, code)
@@ -259,11 +288,11 @@ class TestGradientAccumulation:
     def test_no_smell_with_gradient_accumulation_steps(self, tmp_py):
         code = """\
             from transformers import Trainer, TrainingArguments
-            TrainingArguments = TrainingArguments(
+            args = TrainingArguments(
                 output_dir='./results',
                 gradient_accumulation_steps=4,
             )
-            trainer = Trainer(args=TrainingArguments)
+            trainer = Trainer(args=args)
             trainer.train()
         """
         smells = detect(tmp_py, code)
@@ -275,31 +304,79 @@ class TestGradientAccumulation:
 # ---------------------------------------------------------------------------
 
 class TestLearningRateScheduling:
-    def test_detects_training_without_lr_scheduler(self, tmp_py):
+    def test_detects_custom_loop_without_scheduler(self, tmp_py):
         code = """\
-            from transformers import Trainer, TrainingArguments
-            TrainingArguments = TrainingArguments(
-                output_dir='./results',
-                num_train_epochs=3,
-            )
-            trainer = Trainer(args=TrainingArguments)
-            trainer.train()
+            from transformers import AutoModelForSequenceClassification
+            from torch.optim import AdamW
+            model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased', revision='v1')
+            optimizer = AdamW(model.parameters(), lr=5e-5)
+            for batch in []:
+                loss = model(**batch).loss
+                loss.backward()
+                optimizer.step()
         """
         smells = detect(tmp_py, code)
-        assert "Learning rate scheduler not detected" in smell_texts(smells)
+        assert [s["line_number"] for s in smells if s["smell"] == "Learning rate scheduler not detected"] == [7]
 
-    def test_no_smell_with_lr_scheduler_type(self, tmp_py):
+    def test_no_smell_with_get_scheduler(self, tmp_py):
+        code = """\
+            from transformers import get_scheduler
+            from torch.optim import AdamW
+            optimizer = AdamW([], lr=5e-5)
+            scheduler = get_scheduler('linear', optimizer=optimizer, num_warmup_steps=0, num_training_steps=10)
+            for batch in []:
+                batch.loss.backward()
+                optimizer.step()
+                scheduler.step()
+        """
+        smells = detect(tmp_py, code)
+        assert "Learning rate scheduler not detected" not in smell_texts(smells)
+
+    def test_no_smell_for_trainer_default_linear_schedule(self, tmp_py):
         code = """\
             from transformers import Trainer, TrainingArguments
-            TrainingArguments = TrainingArguments(
-                output_dir='./results',
-                lr_scheduler_type='cosine',
-            )
-            trainer = Trainer(args=TrainingArguments)
+            args = TrainingArguments(output_dir='./results', num_train_epochs=3)
+            trainer = Trainer(args=args)
             trainer.train()
         """
         smells = detect(tmp_py, code)
         assert "Learning rate scheduler not detected" not in smell_texts(smells)
+
+
+class TestTrainingArgumentsChecks:
+    def test_reported_at_the_training_arguments_call(self, tmp_py):
+        code = """\
+            from transformers import Trainer, TrainingArguments
+            args = TrainingArguments(output_dir='./results')
+            Trainer(args=args).train()
+        """
+        smells = detect(tmp_py, code)
+        lines = {s["smell"]: s["line_number"] for s in smells}
+        for smell in ("Mixed precision training not enabled", "Gradient accumulation not configured",
+                      "Distributed training not configured"):
+            assert lines[smell] == 2
+
+    def test_non_literal_values_do_not_abort_detection(self, tmp_py, capsys):
+        code = """\
+            from transformers import Trainer, TrainingArguments
+            USE_AMP = True
+            STEPS = 4
+            args = TrainingArguments(output_dir='o', fp16=USE_AMP, gradient_accumulation_steps=STEPS, fsdp='full_shard')
+            Trainer(args=args).train()
+        """
+        smells = detect(tmp_py, code)
+        assert capsys.readouterr().err == ""
+        assert not {"Mixed precision training not enabled", "Gradient accumulation not configured",
+                    "Distributed training not configured"} & set(smell_texts(smells))
+
+    def test_kwargs_unpacking_is_not_reported(self, tmp_py):
+        code = """\
+            from transformers import TrainingArguments
+            config = {'fp16': True}
+            args = TrainingArguments(output_dir='o', **config)
+        """
+        smells = detect(tmp_py, code)
+        assert "Mixed precision training not enabled" not in smell_texts(smells)
 
 
 # ---------------------------------------------------------------------------
@@ -310,8 +387,8 @@ class TestEarlyStopping:
     def test_detects_training_without_early_stopping(self, tmp_py):
         code = """\
             from transformers import Trainer, TrainingArguments
-            TrainingArguments = TrainingArguments(output_dir='./results')
-            trainer = Trainer(args=TrainingArguments)
+            args = TrainingArguments(output_dir='./results')
+            trainer = Trainer(args=args)
             trainer.train()
         """
         smells = detect(tmp_py, code)
@@ -320,9 +397,9 @@ class TestEarlyStopping:
     def test_no_smell_with_early_stopping_callback(self, tmp_py):
         code = """\
             from transformers import Trainer, TrainingArguments, EarlyStoppingCallback
-            TrainingArguments = TrainingArguments(output_dir='./results')
+            args = TrainingArguments(output_dir='./results')
             trainer = Trainer(
-                args=TrainingArguments,
+                args=args,
                 callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
             )
             trainer.train()

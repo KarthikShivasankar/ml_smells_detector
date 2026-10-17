@@ -1,6 +1,85 @@
+import functools
 import os
+import sys
+import tokenize
 
+import astroid
 from astroid import nodes
+
+
+def read_source(file_path):
+    """Read a Python source file honouring its PEP 263 encoding cookie (UTF-8 by default)."""
+    with tokenize.open(file_path) as f:
+        return f.read()
+
+
+def parse_file(file_path):
+    """Read and parse a source file. The three detectors analyse the same file, so they share one parse."""
+    return _parse(read_source(file_path), os.path.splitext(os.path.basename(file_path))[0])
+
+
+@functools.lru_cache(maxsize=8)  # keyed on the content itself, so an edited file is never served stale
+def _parse(content, module_name):
+    return astroid.parse(content, module_name=module_name)
+
+
+# Checks are read-only over the tree and keep rendering / walking the same nodes (often the whole module), which
+# dominated the profile. Nodes hash by identity, and a cached node stays referenced, so keys are never reused.
+@functools.lru_cache(maxsize=1 << 16)
+def source(node):
+    """``node.as_string()``, memoised."""
+    return node.as_string()
+
+
+@functools.lru_cache(maxsize=1 << 12)
+def nodes_of(node, klass):
+    """``tuple(node.nodes_of_class(klass))``, memoised."""
+    return tuple(node.nodes_of_class(klass))
+
+
+def run_checks(checks, node, file_path):
+    """Run each check(node, file_path); a crash in one is reported on stderr and does not skip the rest."""
+    for check in checks:
+        try:
+            check(node, file_path)
+        except Exception as e:
+            print(f"Error in {check.__name__} for {file_path}: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+def callee_name(call):
+    """Last component of a call's callee: ``a.b.fit(x)`` -> ``'fit'``, ``fit(x)`` -> ``'fit'``, else ``''``."""
+    func = call.func
+    if isinstance(func, nodes.Attribute):
+        return func.attrname
+    return func.name if isinstance(func, nodes.Name) else ''
+
+
+def keyword(call, name):
+    """The value node passed as ``name=`` to ``call``, or None."""
+    return next((kw.value for kw in call.keywords if kw.arg == name), None)
+
+
+def is_true(value):
+    """True for a literal ``True``; a non-literal (``fp16=USE_FP16``) counts as set, since its value is unknown."""
+    return value is not None and not (isinstance(value, nodes.Const) and not value.value)
+
+
+def int_value(node):
+    """Integer value of a literal or of a name bound to one (``EPOCHS = 50; range(EPOCHS)``), else None."""
+    if node is None:
+        return None
+    try:
+        inferred = next(node.infer())
+    except Exception:
+        return None
+    if isinstance(inferred, nodes.Const) and isinstance(inferred.value, int) and not isinstance(inferred.value, bool):
+        return inferred.value
+    return None
+
+
+def in_loop(node):
+    """The innermost for/while loop around ``node``, or None."""
+    return next((a for a in node.node_ancestors() if isinstance(a, (nodes.For, nodes.While))), None)
 
 
 def ensure_directory_exists(directory):
@@ -161,6 +240,7 @@ def get_constant_values(node):
     return [const.value for const in node.nodes_of_class(nodes.Const)]
 
 
+@functools.lru_cache(maxsize=64)
 def get_import_map(node):
     """
     Map each name bound by an import statement to the dotted name it refers to.
@@ -172,7 +252,7 @@ def get_import_map(node):
     node (astroid.Module): The AST node to analyze.
 
     Returns:
-    dict: Local name -> dotted origin.
+    dict: Local name -> dotted origin. Memoised per module: treat it as read-only.
     """
     imports = {}
     for imp in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):

@@ -220,21 +220,30 @@ class TestDatatypeChecker:
 # ---------------------------------------------------------------------------
 
 class TestColumnSelectionChecker:
-    def test_detects_missing_double_bracket_selection(self, tmp_py):
-        # Has pandas operations but uses single-bracket column access only
+    def test_detects_read_without_column_selection(self, tmp_py):
         code = """\
             import pandas as pd
-            df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+            df = pd.read_csv('data.csv')
             val = df['a']
         """
         smells = detect(tmp_py, code)
-        assert "Column Selection Checker" in names(smells)
+        assert [s["line_number"] for s in smells if s["name"] == "Column Selection Checker"] == [2]
 
     def test_no_smell_with_double_bracket(self, tmp_py):
         code = """\
             import pandas as pd
-            df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+            df = pd.read_csv('data.csv')
             subset = df[['a', 'b']]
+        """
+        smells = detect(tmp_py, code)
+        assert "Column Selection Checker" not in names(smells)
+
+    def test_no_smell_with_usecols_or_in_memory_frame(self, tmp_py):
+        code = """\
+            import pandas as pd
+            df = pd.read_csv('data.csv', usecols=['a'])
+            other = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+            val = other['a']
         """
         smells = detect(tmp_py, code)
         assert "Column Selection Checker" not in names(smells)
@@ -245,25 +254,26 @@ class TestColumnSelectionChecker:
 # ---------------------------------------------------------------------------
 
 class TestDataFrameIterationModification:
-    def test_detects_direct_df_modification_in_loop(self, tmp_py):
-        # The detector requires: assignment target is a Subscript,
-        # the assignment contains a pandas indicator ('pd.' etc.),
-        # AND the assignment is inside a For loop.
+    def test_detects_frame_and_row_writes_inside_iterrows(self, tmp_py):
         code = """\
             import pandas as pd
             df = pd.DataFrame({'a': [1, 2, 3]})
-            new_vals = [10, 20, 30]
-            for i in range(len(df)):
-                df['a'] = pd.Series(new_vals)['a']
+            for idx, row in df.iterrows():
+                df.loc[idx, 'b'] = row['a'] * 2
+                row['a'] = 0
         """
         smells = detect(tmp_py, code)
-        # Chain indexing is expected from df['a'][i] patterns; the DataFrame
-        # Iteration Modification fires when a Subscript is on the left side
-        # inside a For and has pd. in the assignment string.
-        # Verify that a Pandas smell is detected (at least chain indexing or
-        # iteration modification).
-        pandas_smells = [s for s in smells if s.get('framework') == 'Pandas']
-        assert len(pandas_smells) > 0
+        assert [s["line_number"] for s in smells if s["name"] == "DataFrame Iteration Modification"] == [4, 5]
+
+    def test_no_smell_for_column_loops(self, tmp_py):
+        code = """\
+            import pandas as pd
+            df = pd.DataFrame({'a': ['1'], 'b': ['2']})
+            for col in df.columns:
+                df[col] = pd.to_numeric(df[col])
+        """
+        smells = detect(tmp_py, code)
+        assert "DataFrame Iteration Modification" not in names(smells)
 
 
 # ---------------------------------------------------------------------------

@@ -236,7 +236,7 @@ class TestBuildArgParser:
         parser = build_arg_parser()
         args = parser.parse_args(["analyze", "some/path"])
         assert args.action == "analyze"
-        assert args.path == "some/path"
+        assert args.path == ["some/path"]
 
     def test_default_output_dir(self):
         parser = build_arg_parser()
