@@ -36,7 +36,7 @@ Scikit-learn
 6. **Dependent Threshold Checker**: Suggests use of threshold-independent metrics alongside threshold-dependent ones.
 7. **Unit Testing Checker**: Checks for presence of unit tests.
 8. **Data Leakage Checker**: Ensures proper train-test splitting to prevent data leakage.
-9. **Exception Handling Checker**: Checks for proper exception handling in data processing steps.
+9. **Exception Handling Checker**: Checks that model persistence I/O (`joblib`/`pickle` `load`/`dump`) is guarded by exception handling.
 
 TensorFlow
 ^^^^^^^^^^

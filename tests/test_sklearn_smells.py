@@ -320,23 +320,42 @@ class TestDataLeakageChecker:
 # ---------------------------------------------------------------------------
 
 class TestExceptionHandlingChecker:
-    def test_detects_missing_exception_handling(self, tmp_py):
+    def test_detects_unguarded_model_loading(self, tmp_py):
         code = """\
+            import joblib
             from sklearn.linear_model import LogisticRegression
-            clf = LogisticRegression()
-            clf.fit([[1, 2], [3, 4]], [0, 1])
+            clf = joblib.load('model.joblib')
         """
         smells = detect(tmp_py, code)
         assert "Exception Handling Checker" in names(smells)
 
     def test_no_smell_with_try_except(self, tmp_py):
         code = """\
+            import joblib
             from sklearn.linear_model import LogisticRegression
-            clf = LogisticRegression()
             try:
-                clf.fit([[1, 2], [3, 4]], [0, 1])
-            except Exception as e:
-                print(e)
+                clf = joblib.load('model.joblib')
+            except FileNotFoundError:
+                clf = LogisticRegression()
+        """
+        smells = detect(tmp_py, code)
+        assert "Exception Handling Checker" not in names(smells)
+
+    def test_no_smell_for_fit_predict_or_names_containing_fit(self, tmp_py):
+        # Regression for #4: substring matches ('benefit', 'fit_summary') and plain fit/predict are not reported.
+        code = """\
+            from sklearn.linear_model import LinearRegression
+
+            def benefit(x):
+                return x * 2
+
+            def fit_summary(model):
+                return str(model)
+
+            model = LinearRegression()
+            model.fit([[0], [1]], [0, 1])
+            print(benefit(3), fit_summary(model))
+            preds = model.predict([[2]])
         """
         smells = detect(tmp_py, code)
         assert "Exception Handling Checker" not in names(smells)

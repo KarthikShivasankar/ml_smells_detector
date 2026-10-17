@@ -651,33 +651,16 @@ class FrameworkSpecificSmellDetector:
         if (has_preprocessing and has_model_training and not has_proper_split):
             self.add_smell('ScikitLearn', 'Data Leakage Checker', node, file_path)
 
+    # Model persistence I/O: the failures here (missing/corrupt/incompatible file) are worth handling.
+    # fit/predict/transform are deliberately excluded: wrapping them in try/except mostly hides real errors.
+    RISKY_IO_CALLS = {'joblib.load', 'joblib.dump', 'pickle.load', 'pickle.dump'}
+
     def detect_exception_handling(self, node: nodes.Module, file_path: str):
-        # Check for risky operations that should have exception handling
-        risky_operations = [
-            'fit', 'predict', 'transform', 'inverse_transform',
-            'cross_val_score', 'GridSearchCV', 'load_', 'dump_',
-            'pickle', 'joblib'
-        ]
-
-        # Find all risky operation calls
-        risky_calls = [
-            call for call in node.nodes_of_class(nodes.Call)
-            if any(op in call.func.as_string() for op in risky_operations)
-        ]
-
-        # Check if these calls are within try-except blocks
-        for call in risky_calls:
-            parent = call.parent
-            within_try_block = False
-
-            while parent and not isinstance(parent, nodes.Module):
-                if isinstance(parent, nodes.Try):
-                    within_try_block = True
-                    break
-                parent = parent.parent
-
-            # Only report if risky operations are not in try-except blocks
-            if risky_calls and not within_try_block:
+        import_map = get_import_map(node)
+        for call in node.nodes_of_class(nodes.Call):
+            if resolve_call_name(call, import_map) not in self.RISKY_IO_CALLS:
+                continue
+            if not any(isinstance(parent, nodes.Try) for parent in call.node_ancestors()):
                 self.add_smell('ScikitLearn', 'Exception Handling Checker', call, file_path)
 
     def check_imports(self, node: nodes.Module, file_path: str):
@@ -1558,9 +1541,10 @@ class FrameworkSpecificSmellDetector:
                                  "benefits": "Prevents data leakage and ensures valid model evaluation.",
                                  "strategies": "Use train_test_split before any data preprocessing steps."},
                                 {"name": "Exception Handling Checker",
-                                 "how_to_fix": "Implement proper exception handling for model operations.",
+                                 "how_to_fix": "Handle failures when loading or saving model artifacts.",
                                  "benefits": "Improves code robustness and error reporting.",
-                                 "strategies": "Use try-except blocks to handle potential exceptions in model training and prediction."}],
+                                 "strategies": "Catch specific exceptions (e.g. FileNotFoundError, EOFError) around joblib/pickle load and dump; "
+                                               "do not wrap fit/predict in blanket try-except."}],
                 "PyTorch": [{"name": "Randomness Control Checker",
                              "how_to_fix": "Set random seed using torch.manual_seed() for reproducibility.",
                              "benefits": "Ensures reproducible results across different runs.",
