@@ -219,19 +219,21 @@ class ML_SmellDetector:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
-        scaling_methods = ['StandardScaler', 'MinMaxScaler', 'RobustScaler']
-        scalers_used = set()
+        scaling_methods = {'StandardScaler', 'MinMaxScaler', 'RobustScaler'}
+        first_constructor = {}  # scaler class name -> first constructor call (StandardScaler().fit is one scaler)
 
         for call in node.nodes_of_class(nodes.Call):
-            if any(method in call.func.as_string() for method in scaling_methods):
-                scalers_used.add(call.func.as_string())
+            func = call.func
+            name = func.attrname if isinstance(func, nodes.Attribute) else getattr(func, 'name', None)
+            if name in scaling_methods:
+                first_constructor.setdefault(name, call)
 
         # Only raise warning if multiple different scaling methods are used
-        if len(scalers_used) > 1:
-            scalers = ', '.join(scalers_used)
+        if len(first_constructor) > 1:
+            scalers = ', '.join(first_constructor)
             self.add_smell(
                 f"Inconsistent scaling methods detected: {scalers}. Consider using the same scaler across the pipeline.",
-                call,
+                list(first_constructor.values())[1],
                 file_path)
 
     def check_cross_validation(self, node: nodes.Module, file_path: str):

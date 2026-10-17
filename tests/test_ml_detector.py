@@ -161,6 +161,26 @@ class TestFeatureScalingInconsistency:
         smells = detect(ml_tmp, code)
         assert has_smell_containing(smells, "inconsistent scaling")
 
+    def test_single_scaler_with_chained_fit_and_finding_line(self, ml_tmp):
+        # Regression for #17: StandardScaler() and StandardScaler().fit counted as two scalers,
+        # and the finding pointed at the last call in the module.
+        single = """\
+            from sklearn.preprocessing import StandardScaler
+            X = [[0.0], [1.0]]
+            scaler = StandardScaler().fit(X)
+            Xs = scaler.transform(X)
+            print(len(Xs))
+        """
+        assert not has_smell_containing(detect(ml_tmp, single), "inconsistent scaling")
+        two = """\
+            from sklearn.preprocessing import StandardScaler, MinMaxScaler
+            a = StandardScaler()
+            b = MinMaxScaler()
+            print(a, b)
+        """
+        smells = [s for s in detect(ml_tmp, two) if "Inconsistent scaling" in s["smell"]]
+        assert [s["line_number"] for s in smells] == [3]
+
     def test_no_smell_with_single_scaler(self, ml_tmp):
         code = """\
             from sklearn.preprocessing import StandardScaler
