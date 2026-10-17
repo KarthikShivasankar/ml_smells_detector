@@ -68,10 +68,19 @@ class TestModelVersioning:
 # ---------------------------------------------------------------------------
 
 class TestTokenizerCaching:
-    def test_detects_missing_cache_dir(self, tmp_py):
+    def test_no_smell_with_default_cache(self, tmp_py):
+        # Regression for #20: transformers caches downloads by default; cache_dir only moves the cache.
         code = """\
             from transformers import AutoTokenizer
             tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+        """
+        smells = detect(tmp_py, code)
+        assert "Tokenizer caching not used" not in smell_texts(smells)
+
+    def test_detects_force_download(self, tmp_py):
+        code = """\
+            from transformers import AutoTokenizer
+            tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased', force_download=True)
         """
         smells = detect(tmp_py, code)
         assert "Tokenizer caching not used" in smell_texts(smells)
@@ -98,10 +107,19 @@ class TestTokenizerCaching:
 # ---------------------------------------------------------------------------
 
 class TestModelCaching:
-    def test_detects_missing_cache_dir(self, tmp_py):
+    def test_no_smell_with_default_cache(self, tmp_py):
+        # Regression for #20: transformers caches downloads by default; cache_dir only moves the cache.
         code = """\
             from transformers import AutoModel
             model = AutoModel.from_pretrained('bert-base-uncased')
+        """
+        smells = detect(tmp_py, code)
+        assert "Model caching not used" not in smell_texts(smells)
+
+    def test_detects_force_download(self, tmp_py):
+        code = """\
+            from transformers import AutoModel
+            model = AutoModel.from_pretrained('bert-base-uncased', force_download=True)
         """
         smells = detect(tmp_py, code)
         assert "Model caching not used" in smell_texts(smells)

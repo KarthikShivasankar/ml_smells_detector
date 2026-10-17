@@ -128,6 +128,13 @@ class HuggingFaceSmellDetector:
                         file_path
                     )
 
+    @staticmethod
+    def _bypasses_cache(call: nodes.Call) -> bool:
+        """from_pretrained caches by default; only force_download=True actually disables it."""
+        return any(keyword.arg == 'force_download' and
+                   not (isinstance(keyword.value, nodes.Const) and not keyword.value.value)
+                   for keyword in call.keywords)
+
     def check_tokenizer_caching(self, node: nodes.Module, file_path: str):
         """Check if tokenizer caching is enabled when loading tokenizers.
 
@@ -142,13 +149,12 @@ class HuggingFaceSmellDetector:
             if ('from_pretrained' in call.func.as_string() and
                 ('AutoTokenizer' in call.func.as_string() or
                  'PreTrainedTokenizer' in call.func.as_string())):
-                if not any(keyword.arg in ['cache_dir', 'local_files_only']
-                           for keyword in call.keywords):
+                if self._bypasses_cache(call):
                     self.add_smell(
                         "Tokenizer caching not used",
                         "Cache tokenizers to avoid re-downloading",
                         "Reduces loading time and network dependency",
-                        "Use cache_dir parameter when loading tokenizers",
+                        "Rely on the default Hugging Face cache (HF_HOME or cache_dir); do not pass force_download=True",
                         call,
                         file_path
                     )
@@ -167,13 +173,12 @@ class HuggingFaceSmellDetector:
             if ('from_pretrained' in call.func.as_string() and
                 ('AutoModel' in call.func.as_string() or
                  'PreTrainedModel' in call.func.as_string())):
-                if not any(keyword.arg in ['cache_dir', 'local_files_only']
-                           for keyword in call.keywords):
+                if self._bypasses_cache(call):
                     self.add_smell(
                         "Model caching not used",
                         "Cache models to avoid re-downloading",
                         "Improves loading efficiency and reduces network dependency",
-                        "Use cache_dir parameter when loading models",
+                        "Rely on the default Hugging Face cache (HF_HOME or cache_dir); do not pass force_download=True",
                         call,
                         file_path
                     )

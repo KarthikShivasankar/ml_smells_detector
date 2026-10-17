@@ -94,8 +94,8 @@ General ML Smells
 Hugging Face-Specific Smells
 ----------------------------
 1. **Model Versioning**: Ensures specific model versions are used for reproducibility.
-2. **Tokenizer Caching**: Checks if tokenizers are cached to avoid re-downloading.
-3. **Model Caching**: Checks if models are cached to avoid re-downloading.
+2. **Tokenizer Caching**: Flags tokenizer loads that bypass the Hugging Face cache (`force_download=True`).
+3. **Model Caching**: Flags model loads that bypass the Hugging Face cache (`force_download=True`).
 4. **Deterministic Tokenization**: Ensures consistent tokenization settings.
 5. **Efficient Data Loading**: Encourages use of efficient data loading techniques.
 6. **Distributed Training**: Checks for configuration of distributed training.
