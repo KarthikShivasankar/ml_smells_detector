@@ -156,6 +156,20 @@ class TestDataFrameConversionChecker:
         smells = detect(tmp_py, code)
         assert "DataFrame Conversion Checker" in names(smells)
 
+    def test_ignores_dict_values_and_reports_once(self, tmp_py):
+        # Regression for #8: dict.values() was reported, and nested calls reported one .values twice.
+        code = """\
+            import numpy as np
+            import pandas as pd
+            counts = {"a": 1, "b": 2}
+            arr = np.array(list(counts.values()), dtype=np.int64)
+            df = pd.DataFrame({"a": [1, 2]})
+            flat = np.asarray(df.values).reshape(-1)
+        """
+        smells = detect(tmp_py, code)
+        lines = [s["line_number"] for s in smells if s["name"] == "DataFrame Conversion Checker"]
+        assert lines == [6]
+
 
 # ---------------------------------------------------------------------------
 # Datatype Checker (read_csv without dtype)

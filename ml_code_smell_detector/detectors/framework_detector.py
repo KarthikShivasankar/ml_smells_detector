@@ -218,12 +218,14 @@ class FrameworkSpecificSmellDetector:
                     self.add_smell('Pandas', 'InPlace Checker', call, file_path)
 
     def detect_values_usage(self, node: nodes.Module, file_path: str):
-        for call in node.nodes_of_class(nodes.Call):
-            if '.values' in call.as_string():
-                # Check if it's used in a context where to_numpy() would be better
-                numpy_contexts = ['np.', 'array', 'asarray', 'reshape', 'transpose']
-                if any(ctx in call.as_string() for ctx in numpy_contexts):
-                    self.add_smell('Pandas', 'DataFrame Conversion Checker', call, file_path)
+        # The `.values` attribute (not the dict.values() method), reported once, when used in a numpy context
+        numpy_contexts = ['np.', 'array', 'asarray', 'reshape', 'transpose']
+        for attr in node.nodes_of_class(nodes.Attribute):
+            if attr.attrname != 'values' or (isinstance(attr.parent, nodes.Call) and attr.parent.func is attr):
+                continue
+            if any(isinstance(anc, nodes.Call) and any(ctx in anc.func.as_string() for ctx in numpy_contexts)
+                   for anc in attr.node_ancestors()):
+                self.add_smell('Pandas', 'DataFrame Conversion Checker', attr, file_path)
 
     def detect_dtype_specification(self, node: nodes.Module, file_path: str):
         for call in node.nodes_of_class(nodes.Call):
