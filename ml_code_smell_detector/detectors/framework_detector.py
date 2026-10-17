@@ -679,17 +679,12 @@ class FrameworkSpecificSmellDetector:
                 self.add_smell('ScikitLearn', 'Exception Handling Checker', call, file_path)
 
     def check_imports(self, node: nodes.Module, file_path: str):
-        for import_node in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
-            if isinstance(import_node, nodes.Import):
-                for name, alias in import_node.names:
-                    if name == 'numpy' and alias != 'np':
-                        self.add_smell('General', 'Import Checker', import_node, file_path)
-                    elif name == 'pandas' and alias != 'pd':
-                        self.add_smell('General', 'Import Checker', import_node, file_path)
-            elif isinstance(import_node, nodes.ImportFrom):
-                if import_node.modname == 'numpy' and any(alias != 'np' for _, alias in import_node.names):
+        # The np/pd alias convention is about importing the module; `from numpy import ndarray` is fine
+        for import_node in node.nodes_of_class(nodes.Import):
+            for name, alias in import_node.names:
+                if name == 'numpy' and alias != 'np':
                     self.add_smell('General', 'Import Checker', import_node, file_path)
-                elif import_node.modname == 'pandas' and any(alias != 'pd' for _, alias in import_node.names):
+                elif name == 'pandas' and alias != 'pd':
                     self.add_smell('General', 'Import Checker', import_node, file_path)
 
     # PyTorch Detection Methods

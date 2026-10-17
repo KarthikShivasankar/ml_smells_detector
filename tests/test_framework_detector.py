@@ -22,3 +22,17 @@ def test_generate_report():
     assert 'Fix it' in report
     assert 'Better code' in report
     assert 'Do this' in report
+
+
+def test_import_checker_ignores_from_imports(tmp_py):
+    # Regression for #10: names imported from numpy/pandas cannot (and should not) be aliased to np/pd.
+    path = tmp_py("""\
+        from numpy import ndarray
+        from pandas import DataFrame
+        import numpy
+        import pandas as pd
+    """)
+    detector = FrameworkSpecificSmellDetector()
+    detector.detect_smells(path)
+    lines = [s['line_number'] for s in detector.smells if s['name'] == 'Import Checker']
+    assert lines == [3]
