@@ -90,6 +90,21 @@ class TestChainIndexing:
         smells = detect(tmp_py, code)
         assert "Chain Indexing" not in names(smells)
 
+    def test_chained_reads_are_not_reported(self, tmp_py):
+        # Regression for #9: nested dict/list reads were reported because their parent is an Assign.
+        code = """\
+            import pandas as pd
+            config = {"model": {"depth": 3}}
+            depth = config["model"]["depth"]
+            matrix = [[1, 2], [3, 4]]
+            cell = matrix[0][1]
+            df = pd.DataFrame({"a": [1, 2]})
+            df["a"][0] = 5
+        """
+        smells = detect(tmp_py, code)
+        lines = [s["line_number"] for s in smells if s["name"] == "Chain Indexing"]
+        assert lines == [7]
+
 
 # ---------------------------------------------------------------------------
 # Merge Parameter Checker

@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 
 import astroid
 from astroid import nodes
+from astroid.const import Context
 
 from ml_code_smell_detector.utils import get_import_map, resolve_call_name
 
@@ -190,8 +191,8 @@ class FrameworkSpecificSmellDetector:
                 while parent and not isinstance(parent, nodes.With):
                     parent = parent.parent
                 if not parent or 'option_context' not in parent.as_string():
-                    # Check if it's an assignment (more dangerous) vs just access
-                    if isinstance(subscript.parent, nodes.Assign):
+                    # Only chained assignment/deletion (df['a'][0] = v) is the smell; chained reads are fine
+                    if subscript.ctx != Context.Load:
                         self.add_smell('Pandas', 'Chain Indexing', subscript, file_path)
 
     def detect_merge_parameters(self, node: nodes.Module, file_path: str):
