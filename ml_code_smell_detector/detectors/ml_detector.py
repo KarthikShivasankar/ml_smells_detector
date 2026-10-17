@@ -1087,6 +1087,14 @@ class ML_SmellDetector:
                 if any(pattern in string.value for pattern in acceptable_patterns):
                     continue
 
+                # Not file paths: URLs, %-format strings (e.g. '%Y/%m/%d') and Hub ids passed to from_pretrained
+                if '://' in string.value or '%' in string.value:
+                    continue
+                call = string.parent
+                if (isinstance(call, nodes.Call) and call.args and call.args[0] is string and
+                        isinstance(call.func, nodes.Attribute) and call.func.attrname == 'from_pretrained'):
+                    continue
+
                 # Skip if it's used in a config/path variable assignment
                 if any(config_var in string.scope().locals for config_var in config_vars):
                     continue

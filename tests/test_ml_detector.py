@@ -331,6 +331,17 @@ class TestErrorHandling:
 # ---------------------------------------------------------------------------
 
 class TestHardcodedFilepaths:
+    def test_no_smell_for_urls_formats_and_hub_ids(self, ml_tmp):
+        # Regression for #18: URLs, strftime formats and from_pretrained repo ids are not file paths.
+        code = """\
+            from transformers import AutoModel
+            URL = "https://example.org/data"
+            FMT = "%Y/%m/%d"
+            model = AutoModel.from_pretrained("org/model", revision="0123abc")
+        """
+        smells = detect(ml_tmp, code)
+        assert not has_smell_containing(smells, "hardcoded file path")
+
     def test_detects_hardcoded_path(self, ml_tmp):
         code = """\
             import pandas as pd
