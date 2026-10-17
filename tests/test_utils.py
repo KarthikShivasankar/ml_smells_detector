@@ -15,9 +15,11 @@ from ml_code_smell_detector.utils import (
     get_constant_values,
     get_file_extension,
     get_function_names,
+    get_import_map,
     get_imported_modules,
     get_variable_names,
     is_python_file,
+    resolve_call_name,
 )
 
 # ---------------------------------------------------------------------------
@@ -261,3 +263,20 @@ class TestGetConstantValues:
 
     def test_returns_list(self, parsed_module):
         assert isinstance(get_constant_values(parsed_module), list)
+
+
+# ---------------------------------------------------------------------------
+# get_import_map / resolve_call_name
+# ---------------------------------------------------------------------------
+
+
+class TestResolveCallName:
+    def test_resolves_aliases_and_from_imports(self):
+        module = astroid.parse(
+            "import numpy as np\nimport os.path\nfrom sklearn.utils import shuffle as sh\n"
+            "np.zeros(3)\nsh([1])\nos.path.join('a')\nobj.method()\n"
+        )
+        import_map = get_import_map(module)
+        assert import_map == {"np": "numpy", "os": "os", "sh": "sklearn.utils.shuffle"}
+        resolved = [resolve_call_name(c, import_map) for c in module.nodes_of_class(astroid.nodes.Call)]
+        assert resolved == ["numpy.zeros", "sklearn.utils.shuffle", "os.path.join", None]

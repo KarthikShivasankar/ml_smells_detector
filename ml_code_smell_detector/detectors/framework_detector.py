@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 import astroid
 from astroid import nodes
 
+from ml_code_smell_detector.utils import get_import_map, resolve_call_name
+
 
 class FrameworkSpecificSmellDetector:
     """A detector for identifying code smells specific to ML frameworks like
@@ -522,24 +524,27 @@ class FrameworkSpecificSmellDetector:
         if has_training and not has_cv:
             self.add_smell('ScikitLearn', 'Cross Validation Checker', node, file_path)
 
+    # scikit-learn APIs whose result depends on random_state (matched on the resolved callee, not a substring)
+    RANDOM_STATE_APIS = {
+        'train_test_split', 'shuffle', 'KFold', 'StratifiedKFold', 'RepeatedKFold', 'RepeatedStratifiedKFold',
+        'ShuffleSplit', 'StratifiedShuffleSplit', 'RandomForestClassifier', 'RandomForestRegressor',
+        'KMeans', 'MiniBatchKMeans', 'PCA', 'KernelPCA', 'SparsePCA', 'MiniBatchSparsePCA',
+    }
+    # These splitters only use random_state when shuffle=True (sklearn raises if it is set otherwise)
+    SHUFFLE_GATED_SPLITTERS = {'KFold', 'StratifiedKFold'}
+
     def detect_random_state(self, node: nodes.Module, file_path: str):
-        # List of methods that accept random_state
-        random_state_methods = [
-            'train_test_split', 'KFold', 'RandomForest', 'KMeans',
-            'PCA', 'shuffle', 'random_state'
-        ]
-
-        # Check if any random-dependent operations are used
-        random_dependent_calls = [
-            call for call in node.nodes_of_class(nodes.Call)
-            if any(method in call.func.as_string() for method in random_state_methods)
-        ]
-
-        # Check if random_state is set for these calls
-        for call in random_dependent_calls:
-            if not any(
-                kw.arg == 'random_state' for kw in call.keywords
-            ):
+        import_map = get_import_map(node)
+        for call in node.nodes_of_class(nodes.Call):
+            qualname = resolve_call_name(call, import_map) or ''
+            api = qualname.rsplit('.', 1)[-1]
+            if not qualname.startswith('sklearn.') or api not in self.RANDOM_STATE_APIS:
+                continue
+            if api in self.SHUFFLE_GATED_SPLITTERS and not any(
+                    kw.arg == 'shuffle' and not (isinstance(kw.value, nodes.Const) and kw.value.value is False)
+                    for kw in call.keywords):
+                continue
+            if not any(kw.arg == 'random_state' for kw in call.keywords):
                 self.add_smell('ScikitLearn', 'Randomness Control Checker', call, file_path)
 
     def detect_verbose_mode(self, node: nodes.Module, file_path: str):

@@ -159,3 +159,49 @@ def get_constant_values(node):
     list: A list of constant values defined in the node.
     """
     return [const.value for const in node.nodes_of_class(nodes.Const)]
+
+
+def get_import_map(node):
+    """
+    Map each name bound by an import statement to the dotted name it refers to.
+
+    ``import numpy as np`` gives ``{'np': 'numpy'}``; ``from sklearn.utils import shuffle``
+    gives ``{'shuffle': 'sklearn.utils.shuffle'}``.
+
+    Args:
+    node (astroid.Module): The AST node to analyze.
+
+    Returns:
+    dict: Local name -> dotted origin.
+    """
+    imports = {}
+    for imp in node.nodes_of_class((nodes.Import, nodes.ImportFrom)):
+        for name, alias in imp.names:
+            if isinstance(imp, nodes.ImportFrom):
+                imports[alias or name] = f"{imp.modname}.{name}"
+            elif alias:
+                imports[alias] = name
+            else:
+                root = name.split('.')[0]
+                imports[root] = root
+    return imports
+
+
+def resolve_call_name(call, import_map):
+    """
+    Return the dotted origin of a call's callee, e.g. ``np.zeros(3)`` -> ``'numpy.zeros'``.
+
+    Args:
+    call (astroid.nodes.Call): The call to resolve.
+    import_map (dict): Result of :func:`get_import_map` for the module.
+
+    Returns:
+    str or None: The dotted name, or None if the callee is not rooted in an imported name.
+    """
+    func, parts = call.func, []
+    while isinstance(func, nodes.Attribute):
+        parts.append(func.attrname)
+        func = func.expr
+    if not isinstance(func, nodes.Name) or func.name not in import_map:
+        return None
+    return '.'.join([import_map[func.name]] + parts[::-1])

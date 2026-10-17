@@ -150,6 +150,43 @@ class TestRandomnessControlChecker:
         smells = detect(tmp_py, code)
         assert "Randomness Control Checker" not in names(smells)
 
+    def test_no_smell_for_check_random_state_idiom(self, tmp_py):
+        # Regression for #3: 'random_state' as a substring of the callee is not a random-dependent API.
+        code = """\
+            from sklearn.utils import check_random_state
+
+            def noise(n, seed=None):
+                random_state = check_random_state(seed)
+                return random_state.uniform(size=n)
+
+            class Jitter:
+                def __init__(self, random_state=None):
+                    self.random_state = random_state
+
+                def apply(self, X):
+                    rng = check_random_state(self.random_state)
+                    return X + rng.normal(size=len(X))
+        """
+        smells = detect(tmp_py, code)
+        assert "Randomness Control Checker" not in names(smells)
+
+    def test_matches_exact_sklearn_apis_only(self, tmp_py):
+        code = """\
+            import random
+            from sklearn.model_selection import KFold
+            from sklearn.ensemble import RandomForestClassifier as RF
+            from sklearn.utils import shuffle
+            items = [1, 2, 3]
+            random.shuffle(items)
+            KFold(n_splits=2)
+            KFold(n_splits=2, shuffle=True)
+            RF(n_estimators=10)
+            shuffle(items)
+        """
+        smells = detect(tmp_py, code)
+        lines = [s["line_number"] for s in smells if s["name"] == "Randomness Control Checker"]
+        assert lines == [8, 9, 10]
+
 
 # ---------------------------------------------------------------------------
 # Verbose Mode Checker
