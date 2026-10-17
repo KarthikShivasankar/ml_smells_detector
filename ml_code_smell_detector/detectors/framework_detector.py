@@ -1,11 +1,11 @@
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
 import astroid
 from astroid import nodes
-from astroid.const import Context
 
 from ml_code_smell_detector.utils import get_import_map, resolve_call_name
 
@@ -184,17 +184,69 @@ class FrameworkSpecificSmellDetector:
                 if parent and any(op in parent.as_string() for op in vectorizable_operations):
                     self.add_smell('Pandas', 'Unnecessary Iteration', call, file_path)
 
+    _FRAME_NAME = re.compile(r"^(df|.+_df|df_.+|.*dataframe.*|frame|.+_frame|series|.+_series)$", re.IGNORECASE)
+
+    @classmethod
+    def _pandas_names(cls, node: nodes.Module) -> set:
+        """Names that hold pandas objects: annotated DataFrame/Series, assigned from a pandas call or from a
+        method/index of another pandas name (propagated), minus names bound to dict/list literals."""
+        names, plain = set(), set()
+        for fn in node.nodes_of_class(nodes.FunctionDef):
+            for arg, ann in zip(fn.args.args or [], fn.args.annotations or []):
+                if ann is not None and re.search(r"\b(DataFrame|Series)\b", ann.as_string()):
+                    names.add(arg.name)
+        assigns = [a for a in node.nodes_of_class(nodes.Assign) if len(a.targets) == 1 and isinstance(a.targets[0], nodes.AssignName)]
+        for a in assigns:
+            if isinstance(a.value, (nodes.Dict, nodes.List, nodes.Tuple, nodes.DictComp, nodes.ListComp)) or (
+                    isinstance(a.value, nodes.Call) and a.value.func.as_string() in ("dict", "list", "defaultdict", "OrderedDict")):
+                plain.add(a.targets[0].name)
+        for _ in range(3):  # df2 = df.copy(); df3 = df2[mask]
+            for a in assigns:
+                v, name = a.value, a.targets[0].name
+                text = v.func.as_string() if isinstance(v, nodes.Call) else ""
+                base = cls._chain_base(v.func if isinstance(v, nodes.Call) else v)
+                if (text.startswith(("pd.", "pandas.")) or re.search(r"\bread_(csv|parquet|json|excel|sql|table|feather|pickle)$", text)
+                        or (isinstance(base, nodes.Name) and base.name in names and base is not v)):
+                    names.add(name)
+        return names - plain
+
+    @staticmethod
+    def _chain_base(expr):
+        while isinstance(expr, (nodes.Subscript, nodes.Attribute)):
+            expr = expr.value if isinstance(expr, nodes.Subscript) else expr.expr
+        return expr
+
     def detect_chain_indexing(self, node: nodes.Module, file_path: str):
+        """df["a"][0] (read or write) on a pandas object. Nested dict/list access is not chain indexing: the
+        receiver has to look like a DataFrame/Series (see _pandas_names), since there is no type inference."""
+        pandas_names = self._pandas_names(node)
         for subscript in node.nodes_of_class(nodes.Subscript):
-            if isinstance(subscript.value, nodes.Subscript):
-                # Only flag if it's not within a with pd.option_context block
-                parent = subscript.parent
-                while parent and not isinstance(parent, nodes.With):
-                    parent = parent.parent
-                if not parent or 'option_context' not in parent.as_string():
-                    # Only chained assignment/deletion (df['a'][0] = v) is the smell; chained reads are fine
-                    if subscript.ctx != Context.Load:
-                        self.add_smell('Pandas', 'Chain Indexing', subscript, file_path)
+            if not isinstance(subscript.value, nodes.Subscript) or isinstance(subscript.parent, nodes.Subscript):
+                continue  # report each chain once, at its outermost subscript
+            base = subscript.value
+            while isinstance(base, nodes.Subscript):
+                base = base.value
+            if isinstance(base, nodes.Name):
+                pandas_like = base.name in pandas_names or (
+                    bool(self._FRAME_NAME.match(base.name)) and not self._is_plain(node, base.name))
+            elif isinstance(base, nodes.Attribute):
+                pandas_like = bool(self._FRAME_NAME.match(base.attrname))
+            elif isinstance(base, nodes.Call):
+                pandas_like = base.func.as_string().startswith(("pd.", "pandas."))
+            else:
+                pandas_like = False
+            if not pandas_like:
+                continue
+            parent = subscript.parent
+            while parent and not isinstance(parent, nodes.With):
+                parent = parent.parent
+            if not parent or 'option_context' not in parent.as_string():
+                self.add_smell('Pandas', 'Chain Indexing', subscript, file_path)
+
+    @staticmethod
+    def _is_plain(node: nodes.Module, name: str) -> bool:
+        return any(isinstance(a.value, (nodes.Dict, nodes.List)) for a in node.nodes_of_class(nodes.Assign)
+                   if len(a.targets) == 1 and isinstance(a.targets[0], nodes.AssignName) and a.targets[0].name == name)
 
     def detect_merge_parameters(self, node: nodes.Module, file_path: str):
         for call in node.nodes_of_class(nodes.Call):
