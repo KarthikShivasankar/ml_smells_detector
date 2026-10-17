@@ -13,7 +13,6 @@ echo Setting up documentation directories...
 
 REM Create necessary directories
 if not exist docs\build mkdir docs\build
-if not exist docs\source\_static mkdir docs\source\_static
 
 echo Cleaning build directory...
 pushd docs\build
