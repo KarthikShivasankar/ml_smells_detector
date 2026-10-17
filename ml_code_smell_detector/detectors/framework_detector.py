@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, List
 
 import astroid
@@ -603,10 +604,20 @@ class FrameworkSpecificSmellDetector:
         if is_classification and not has_threshold_metrics:
             self.add_smell('ScikitLearn', 'Dependent Threshold Checker', node, file_path)
 
+    @staticmethod
+    def _has_test_file(path: Path) -> bool:
+        """True if test_<stem>.py / <stem>_test.py exists next to the file or in a tests/ or test/ dir of an ancestor."""
+        names = (f"test_{path.stem}.py", f"{path.stem}_test.py")
+        dirs = [path.parent] + [d / sub for d in path.resolve().parents for sub in ('tests', 'test')]
+        return any((d / n).is_file() for d in dirs for n in names)
+
     def detect_unit_tests(self, node: nodes.Module, file_path: str):
-        # Check if this is a source file (not already a test file)
-        is_test_file = ('test' in file_path.lower() or
-                        node.as_string().lower().startswith('test'))
+        path = Path(file_path)
+        # A test module is recognised by its name/location or by the tests it defines, not by the substring 'test'
+        is_test_file = (path.name.startswith('test_') or path.stem.endswith('_test') or
+                        any(part in ('test', 'tests') for part in path.parent.parts) or
+                        any(f.name.startswith('test_') for f in node.nodes_of_class(nodes.FunctionDef)) or
+                        any('TestCase' in base.as_string() for c in node.nodes_of_class(nodes.ClassDef) for base in c.bases))
 
         # Check for model training or evaluation code
         ml_operations = [
@@ -619,18 +630,8 @@ class FrameworkSpecificSmellDetector:
             for op in ml_operations
         )
 
-        # Check for testing frameworks
-        test_frameworks = [
-            'unittest', 'pytest', 'nose',
-            'TestCase', '@test', '@pytest'
-        ]
-        has_tests = any(
-            framework in node.as_string()
-            for framework in test_frameworks
-        )
-
-        # Only suggest adding tests for non-test ML files without tests
-        if not is_test_file and has_ml_operations and not has_tests:
+        # Tests live in their own files: look for one instead of grepping this module for 'pytest'
+        if not is_test_file and has_ml_operations and not self._has_test_file(path):
             self.add_smell('ScikitLearn', 'Unit Testing Checker', node, file_path)
 
     def detect_data_leakage(self, node: nodes.Module, file_path: str):

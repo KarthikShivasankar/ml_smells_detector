@@ -34,7 +34,7 @@ Scikit-learn
 4. **Randomness Control Checker**: Ensures consistent random state setting across estimators.
 5. **Verbose Mode Checker**: Encourages use of verbose mode for long-running processes.
 6. **Dependent Threshold Checker**: Suggests use of threshold-independent metrics alongside threshold-dependent ones.
-7. **Unit Testing Checker**: Checks for presence of unit tests.
+7. **Unit Testing Checker**: Checks that a test file (`test_<module>.py` or `<module>_test.py`, next to the module or in a `tests`/`test` directory) exists.
 8. **Data Leakage Checker**: Ensures proper train-test splitting to prevent data leakage.
 9. **Exception Handling Checker**: Checks that model persistence I/O (`joblib`/`pickle` `load`/`dump`) is guarded by exception handling.
 

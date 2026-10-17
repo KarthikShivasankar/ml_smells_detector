@@ -298,6 +298,37 @@ class TestUnitTestingChecker:
         smells = detect(tmp_py, code)
         assert "Unit Testing Checker" not in names(smells)
 
+    def test_no_smell_when_test_file_exists(self, tmp_path):
+        # Regression for #11: tests in tests/test_<module>.py count; the module need not mention pytest.
+        (tmp_path / "tests").mkdir()
+        (tmp_path / "tests" / "test_model.py").write_text("def test_train():\n    pass\n")
+        module = tmp_path / "model.py"
+        module.write_text(textwrap.dedent("""\
+            from sklearn.linear_model import LinearRegression
+
+            def train(X, y):
+                model = LinearRegression()
+                model.fit(X, y)
+                return model
+        """))
+        detector = FrameworkSpecificSmellDetector()
+        detector.detect_smells(str(module))
+        assert "Unit Testing Checker" not in names(detector.smells)
+
+    def test_mentioning_pytest_does_not_count_as_tests(self):
+        code = textwrap.dedent("""\
+            import pytest
+            from sklearn.linear_model import LinearRegression
+            model = LinearRegression().fit([[0], [1]], [0, 1])
+        """)
+        base = Path(tempfile.gettempdir()) / "sklearn_ml_work"
+        base.mkdir(exist_ok=True)
+        path = base / "pipeline_no_tests.py"
+        path.write_text(code)
+        detector = FrameworkSpecificSmellDetector()
+        detector.detect_smells(str(path))
+        assert "Unit Testing Checker" in names(detector.smells)
+
 
 # ---------------------------------------------------------------------------
 # Data Leakage Checker (preprocessing + training without split)
