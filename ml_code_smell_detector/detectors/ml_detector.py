@@ -199,6 +199,10 @@ class ML_SmellDetector:
                 # Skip if it's an acceptable value
                 if assign.value.value in acceptable_values:
                     continue
+                # Skip named UPPER_CASE constants: naming the literal is the fix for a magic number
+                target = assign.targets[0]
+                if isinstance(target, nodes.AssignName) and target.name.isupper():
+                    continue
                 # Skip if the variable name suggests it's a legitimate constant
                 if any(assign.targets[0].as_string().lower().startswith(prefix) for prefix in
                        ['num_', 'size_', 'batch_', 'epoch', 'learning_rate', 'lr_', 'threshold_']):

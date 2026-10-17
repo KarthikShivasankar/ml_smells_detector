@@ -133,6 +133,17 @@ class TestMagicNumbers:
         smells = detect(ml_tmp, code)
         assert not has_smell_containing(smells, "magic number")
 
+    def test_no_smell_for_upper_case_constant(self, ml_tmp):
+        # Regression for #16: extracting a literal into a named constant is the fix, not the smell.
+        code = """\
+            import numpy as np
+            MAX_DEPTH = 7
+            LEARNING_DECAY = 0.97
+            x = np.zeros(MAX_DEPTH) * LEARNING_DECAY
+        """
+        smells = detect(ml_tmp, code)
+        assert not has_smell_containing(smells, "magic number")
+
 
 # ---------------------------------------------------------------------------
 # Feature Scaling Inconsistency
