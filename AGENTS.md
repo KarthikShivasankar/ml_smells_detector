@@ -24,7 +24,7 @@ uv sync --extra dev
 ## Common commands
 
 ```bash
-# Run the full test suite (212 tests)
+# Run the full test suite
 uv run python -m pytest tests/
 
 # Lint (both must pass)
@@ -43,7 +43,19 @@ cd docs && uv run sphinx-build -b html source build/html
 
 # Run the tool
 uv run ml_smell_detector analyze <path> --output-dir output
+
+# Machine-readable: JSON on stdout, no files; list every rule id
+uv run ml_smell_detector analyze <path> --format json
+uv run ml_smell_detector rules
 ```
+
+## Using MLScent as a tool from an agent or harness
+
+Prefer `ml_code_smell_detector.api` over the detector classes:
+`analyze_file(path)` / `analyze_source(code)` return `{"file", "findings", "errors"}` with one schema for all
+detectors (`rule_id`, `detector`, `framework`, `name`, `message`, `line`, `snippet`, `how_to_fix`, `benefits`),
+findings sorted by `(line, rule_id)`, and nothing printed. `list_rules()` is the rule catalogue. Rule ids are
+stable: keep them unchanged when editing a rule (renaming a smell changes its id).
 
 ## Architecture
 
@@ -55,6 +67,7 @@ uv run ml_smell_detector analyze <path> --output-dir output
     Sklearn, PyTorch, TensorFlow
   - `HuggingFaceSmellDetector` (`huggingface_detector.py`) — HF Transformers
   - `ML_SmellDetector` (`ml_detector.py`) — general ML practices
+- `ml_code_smell_detector/api.py` — machine-friendly wrapper (unified findings, rule ids, JSON CLI).
 - `ml_code_smell_detector/utils.py` — `astroid`-based AST helpers. Import node
   types from `astroid.nodes` (e.g. `nodes.Call`), not the top-level `astroid`
   namespace (those aliases are deprecated and removed in astroid v5).

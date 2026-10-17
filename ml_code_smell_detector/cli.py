@@ -1,6 +1,8 @@
 import argparse
 import csv
+import json
 import os
+import sys
 
 from tqdm import tqdm
 
@@ -8,6 +10,7 @@ from ml_code_smell_detector import (
     FrameworkSpecificSmellDetector,
     HuggingFaceSmellDetector,
     ML_SmellDetector,
+    api,
 )
 from ml_code_smell_detector.utils import ensure_directory_exists
 
@@ -88,8 +91,14 @@ def collect_python_files(path, ignored_dirs):
 
 def build_arg_parser():
     parser = argparse.ArgumentParser(description="ML Code Smell Detector")
-    parser.add_argument("action", choices=["analyze"], help="Action to perform")
-    parser.add_argument("path", help="Path to file or directory to analyze")
+    parser.add_argument("action", choices=["analyze", "rules"], help="analyze PATH, or list all rule ids as JSON")
+    parser.add_argument("path", nargs="?", help="Path to file or directory to analyze")
+    parser.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="text: write .txt/.csv reports to --output-dir; json: print one JSON document to stdout",
+    )
     parser.add_argument("--output-dir", default="output", help="Directory to store output files")
     parser.add_argument(
         "--ignore",
@@ -105,20 +114,31 @@ def main():
     parser = build_arg_parser()
     args = parser.parse_args()
 
-    ensure_directory_exists(args.output_dir)
-    txt_output = os.path.join(args.output_dir, "analysis_report.txt")
-    csv_output = os.path.join(args.output_dir, "analysis_report.csv")
+    if args.action == "rules":
+        print(json.dumps(api.list_rules(), indent=2))
+        return
+    if args.path is None:
+        parser.error("analyze requires a path")
 
     if args.action == "analyze":
-        results = {}
         if os.path.isfile(args.path):
             python_files = [args.path]
         elif os.path.isdir(args.path):
             python_files = collect_python_files(args.path, set(args.ignore))
         else:
+            if args.format == "json":
+                sys.exit(f"Error: {args.path} is not a valid file or directory")
             print(f"Error: {args.path} is not a valid file or directory")
             return
 
+        if args.format == "json":
+            print(json.dumps({"files": [api.analyze_file(f) for f in sorted(python_files)]}, indent=2))
+            return
+
+        ensure_directory_exists(args.output_dir)
+        txt_output = os.path.join(args.output_dir, "analysis_report.txt")
+        csv_output = os.path.join(args.output_dir, "analysis_report.csv")
+        results = {}
         for file_path in tqdm(python_files, desc="Analyzing files", unit="file"):
             results[file_path] = analyze_file(file_path)
 

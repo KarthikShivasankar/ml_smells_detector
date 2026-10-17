@@ -91,6 +91,9 @@ ml_smell_detector analyze <path> [options]
 | `path` | Path to a `.py` file or a directory |
 | `--output-dir DIR` | Directory to write reports to (default: `output/`) |
 | `--ignore DIR [DIR ...]` | Directory names to skip during analysis |
+| `--format {text,json}` | `text` (default) writes the reports below; `json` prints one JSON document to stdout and writes no files |
+
+`ml_smell_detector rules` prints every rule id the detectors can emit, as JSON.
 
 ### Examples
 
@@ -173,6 +176,28 @@ for DetectorClass in [FrameworkSpecificSmellDetector, HuggingFaceSmellDetector, 
         print(f"[{smell['framework']}] {smell['name']} @ {smell['location']}")
         print(f"  Fix: {smell['fix']}")
 ```
+
+### 6. Use from an agent, harness or script
+
+`ml_code_smell_detector.api` gives one finding schema for all three detectors, stable rule ids and no
+stderr noise (detector errors are returned, not printed):
+
+```python
+from ml_code_smell_detector.api import analyze_file, analyze_source, list_rules
+
+result = analyze_source(open("train.py").read())   # or analyze_file("train.py")
+for f in result["findings"]:                       # sorted by (line, rule_id); line 0 = file-level
+    print(f["rule_id"], f["line"], f["message"])   # e.g. ML.PANDAS.CHAIN_INDEXING 12 Chain Indexing
+assert not result["errors"]                        # parse/detector errors end up here
+```
+
+Each finding has `rule_id`, `detector` (`framework` / `huggingface` / `general`), `framework`, `name`, `message`,
+`line`, `snippet`, `how_to_fix`, `benefits`. Rule ids are `ML.<FRAMEWORK>.<NAME>` for framework rules,
+`ML.HF.<NAME>` for Hugging Face rules and short ids such as `ML.MAGIC_NUMBER` for general rules; `list_rules()`
+(or `ml_smell_detector rules`) lists them all. `analyze_source` uses a neutral temporary file name because some
+general checks are skipped when the path contains words like `data`, `utils` or `test_`.
+
+From a shell: `ml_smell_detector analyze src/ --format json | jq '.files[].findings[].rule_id'`.
 
 ---
 
