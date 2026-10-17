@@ -312,6 +312,38 @@ class TestLoggingChecker:
 
 
 # ---------------------------------------------------------------------------
+# Mask Missing Checker
+# ---------------------------------------------------------------------------
+
+class TestMaskMissingChecker:
+    def test_log_of_risky_input_does_not_abort_other_checks(self, tmp_py, capsys):
+        # Regression for #12: any(<bool>) raised TypeError and skipped every later PyTorch check.
+        code = """\
+            import torch
+            x = torch.log(torch.rand(3))
+
+            class Net(torch.nn.Module):
+                def forward(self, x):
+                    return x
+
+            net = Net()
+            y = net.forward(x)
+        """
+        smells = detect(tmp_py, code)
+        assert "Mask Missing Checker" in names(smells)
+        assert "Net Forward Checker" in names(smells)
+        assert "Error" not in capsys.readouterr().err
+
+    def test_no_smell_with_clamp(self, tmp_py):
+        code = """\
+            import torch
+            x = torch.log(torch.clamp(torch.rand(3), min=1e-6))
+        """
+        smells = detect(tmp_py, code)
+        assert "Mask Missing Checker" not in names(smells)
+
+
+# ---------------------------------------------------------------------------
 # Framework label
 # ---------------------------------------------------------------------------
 

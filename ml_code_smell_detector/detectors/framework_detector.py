@@ -809,9 +809,7 @@ class FrameworkSpecificSmellDetector:
                     # Check if masking is applied
                     has_mask = (
                         len(call.args) > 1 or
-                        any('clamp' in node.as_string() or
-                            'mask' in node.as_string() or
-                            'where' in node.as_string())
+                        any(op in node.as_string() for op in ('clamp', 'mask', 'where'))
                     )
 
                     # Only report if there's a risk of invalid input without masking
