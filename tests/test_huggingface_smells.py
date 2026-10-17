@@ -146,6 +146,16 @@ class TestDeterministicTokenization:
         smells = detect(tmp_py, code)
         assert "Deterministic tokenization settings not specified" in smell_texts(smells)
 
+    def test_no_smell_when_settings_passed_at_call_time(self, tmp_py):
+        # Regression for #21: truncation/padding/max_length belong on the tokenizer call, not from_pretrained.
+        code = """\
+            from transformers import AutoTokenizer
+            tok = AutoTokenizer.from_pretrained('bert-base-uncased', revision='v1.0')
+            enc = tok('hello', truncation=True, padding='max_length', max_length=16, return_tensors='pt')
+        """
+        smells = detect(tmp_py, code)
+        assert "Deterministic tokenization settings not specified" not in smell_texts(smells)
+
     def test_no_smell_with_padding_and_truncation(self, tmp_py):
         code = """\
             from transformers import AutoTokenizer

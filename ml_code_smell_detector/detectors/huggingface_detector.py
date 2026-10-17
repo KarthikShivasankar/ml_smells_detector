@@ -193,6 +193,12 @@ class HuggingFaceSmellDetector:
             node: AST node representing the module
             file_path: Path to the file being analyzed
         """
+        # truncation/padding/max_length take effect when the tokenizer is *called*, so settings passed to
+        # any call count. ponytail: module-level evidence; track the tokenizer variable if this proves too lax.
+        call_time_params = {'truncation', 'padding', 'max_length'}
+        if any(keyword.arg in call_time_params
+               for call in node.nodes_of_class(nodes.Call) for keyword in call.keywords):
+            return
         for call in node.nodes_of_class(nodes.Call):
             if ('from_pretrained' in call.func.as_string() and
                 ('AutoTokenizer' in call.func.as_string() or
@@ -206,7 +212,7 @@ class HuggingFaceSmellDetector:
                         "Deterministic tokenization settings not specified",
                         "Use consistent tokenization settings",
                         "Ensures reproducible pre-processing and consistent model inputs",
-                        "Set tokenization parameters explicitly when loading tokenizers",
+                        "Pass truncation/padding/max_length explicitly when calling the tokenizer",
                         call,
                         file_path
                     )
