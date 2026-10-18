@@ -1,10 +1,10 @@
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
 import astroid
 from astroid import nodes
-from astroid.const import Context
 
 from ml_code_smell_detector.utils import (
     callee_name,
@@ -193,20 +193,79 @@ class FrameworkSpecificSmellDetector:
                 if parent and any(op in source(parent) for op in vectorizable_operations):
                     self.add_smell('Pandas', 'Unnecessary Iteration', call, file_path)
 
+    _FRAME_NAME = re.compile(r"^(df|.+_df|df_.+|.*dataframe.*|frame|.+_frame|series|.+_series)$", re.IGNORECASE)
+
+    @classmethod
+    def _pandas_names(cls, node: nodes.Module) -> set:
+        """Names that hold pandas objects: annotated DataFrame/Series, assigned from a pandas call or from a
+        method/index of another pandas name (propagated), minus names bound to dict/list literals."""
+        names, plain = set(), set()
+        for fn in nodes_of(node, nodes.FunctionDef):
+            for arg, ann in zip(fn.args.args or [], fn.args.annotations or []):
+                if ann is not None and re.search(r"\b(DataFrame|Series)\b", source(ann)):
+                    names.add(arg.name)
+        assigns = [a for a in nodes_of(node, nodes.Assign) if len(a.targets) == 1 and isinstance(a.targets[0], nodes.AssignName)]
+        for a in assigns:
+            if isinstance(a.value, (nodes.Dict, nodes.List, nodes.Tuple, nodes.DictComp, nodes.ListComp)) or (
+                    isinstance(a.value, nodes.Call) and source(a.value.func) in ("dict", "list", "defaultdict", "OrderedDict")):
+                plain.add(a.targets[0].name)
+        for _ in range(3):  # df2 = df.copy(); df3 = df2[mask]
+            for a in assigns:
+                v, name = a.value, a.targets[0].name
+                if cls._leaves_pandas(v):
+                    continue  # X = df.loc[:, 2:].values is a numpy array
+                text = source(v.func) if isinstance(v, nodes.Call) else ""
+                base = cls._chain_base(v.func if isinstance(v, nodes.Call) else v)
+                if (text.startswith(("pd.", "pandas.")) or re.search(r"\bread_(csv|parquet|json|excel|sql|table|feather|pickle)$", text)
+                        or (isinstance(base, nodes.Name) and base.name in names and base is not v)):
+                    names.add(name)
+        return names - plain
+
+    # Conversions whose result is no longer a pandas object
+    PANDAS_EXITS = {'values', 'to_numpy', 'tolist', 'to_list', 'to_dict', 'to_records', 'item', 'array'}
+
+    @classmethod
+    def _leaves_pandas(cls, value) -> bool:
+        func = value.func if isinstance(value, nodes.Call) else value
+        return isinstance(func, nodes.Attribute) and func.attrname in cls.PANDAS_EXITS
+
+    @staticmethod
+    def _chain_base(expr):
+        while isinstance(expr, (nodes.Subscript, nodes.Attribute)):
+            expr = expr.value if isinstance(expr, nodes.Subscript) else expr.expr
+        return expr
+
     def detect_chain_indexing(self, node: nodes.Module, file_path: str):
+        """df["a"][0] (read or write) on a pandas object. Nested dict/list access is not chain indexing: the
+        receiver has to look like a DataFrame/Series (see _pandas_names), since there is no type inference."""
+        pandas_names = self._pandas_names(node)
         for subscript in nodes_of(node, nodes.Subscript):
-            if isinstance(subscript.value, nodes.Subscript):
-                # Only flag if it's not within a with pd.option_context block
-                parent = subscript.parent
-                while parent and not isinstance(parent, nodes.With):
-                    parent = parent.parent
-                if not parent or 'option_context' not in source(parent):
-                    # Only chained assignment/deletion (df['a'][0] = v, df[mask]['a'] = v) is the smell; chained
-                    # reads are fine. A column label on either side tells it apart from nested lists (grid[i][j] = v).
-                    if subscript.ctx != Context.Load and any(
-                            isinstance(s, nodes.Const) and isinstance(s.value, str)
-                            for s in (subscript.slice, subscript.value.slice)):
-                        self.add_smell('Pandas', 'Chain Indexing', subscript, file_path)
+            if not isinstance(subscript.value, nodes.Subscript) or isinstance(subscript.parent, nodes.Subscript):
+                continue  # report each chain once, at its outermost subscript
+            base = subscript.value
+            while isinstance(base, nodes.Subscript):
+                base = base.value
+            if isinstance(base, nodes.Name):
+                pandas_like = base.name in pandas_names or (
+                    bool(self._FRAME_NAME.match(base.name)) and not self._is_plain(node, base.name))
+            elif isinstance(base, nodes.Attribute):
+                pandas_like = bool(self._FRAME_NAME.match(base.attrname))
+            elif isinstance(base, nodes.Call):
+                pandas_like = source(base.func).startswith(("pd.", "pandas."))
+            else:
+                pandas_like = False
+            if not pandas_like:
+                continue
+            parent = subscript.parent
+            while parent and not isinstance(parent, nodes.With):
+                parent = parent.parent
+            if not parent or 'option_context' not in source(parent):
+                self.add_smell('Pandas', 'Chain Indexing', subscript, file_path)
+
+    @staticmethod
+    def _is_plain(node: nodes.Module, name: str) -> bool:
+        return any(isinstance(a.value, (nodes.Dict, nodes.List)) for a in nodes_of(node, nodes.Assign)
+                   if len(a.targets) == 1 and isinstance(a.targets[0], nodes.AssignName) and a.targets[0].name == name)
 
     MERGE_KEYWORDS = {'how', 'on', 'left_on', 'right_on', 'left_index', 'right_index', 'validate'}
 

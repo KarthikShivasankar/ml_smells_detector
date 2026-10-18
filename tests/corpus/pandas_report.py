@@ -17,7 +17,7 @@ sales["amount"][0] = 0  # expect: ML.PANDAS.CHAIN_INDEXING
 sales[sales["amount"] < 0]["amount"] = 0  # expect: ML.PANDAS.CHAIN_INDEXING
 grid = [[0] * 3 for _ in range(3)]  # expect: ML.MAGIC_NUMBER
 grid[1][2] = 5
-first = sales["amount"][0]
+first = sales["amount"][0]  # expect: ML.PANDAS.CHAIN_INDEXING
 
 for idx, row in sales.iterrows():
     sales.loc[idx, "net"] = row["amount"] * 0.8  # expect: ML.MAGIC_NUMBER, ML.PANDAS.DATAFRAME_ITERATION_MODIFICATION

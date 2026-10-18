@@ -56,7 +56,8 @@ Detection fixes
   error handling looks at I/O only; incomplete seeding names the unseeded framework (aliases such as ``tf`` were
   missed); hardcoded paths skip MIME types, ratios and fragments joined to a base.
 - Pandas: ``df.merge(b)`` is checked (only ``pd.merge`` was); every ``inplace=True`` is reported; chain indexing
-  needs a column label (no more ``grid[i][j] = v``); column selection looks at file reads; dataframe modification
+  is decided by the receiver (#9): chained reads and writes on pandas objects are reported, nested dict/list access
+  (``cfg['a']['b']``, ``res['evals'][k] = v``) and arrays converted with ``.values``/``.to_numpy()`` are not; column selection looks at file reads; dataframe modification
   targets writes inside ``iterrows``/``itertuples`` loops; dtype checks no longer trigger on ``os.path.join``.
 - NumPy: NaN comparisons on either side (and ``math.nan``, ``float('nan')``), not ``np.nanmean``; unseeded
   ``default_rng()``; all ``np.random`` draws; ``np.append``/``vstack``/``hstack`` and ``while`` loops for array

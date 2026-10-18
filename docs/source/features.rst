@@ -16,7 +16,7 @@ Pandas
 ^^^^^^
 1. **Unnecessary Iteration**: Detects use of `.iterrows()` which is often slower than vectorized operations.
 2. **DataFrame Iteration Modification**: Writes to the frame being iterated (``df.loc[i, 'a'] = v`` inside ``for i, row in df.iterrows()``) or to the row copy (``row['a'] = v``, which has no effect on ``df``).
-3. **Chain Indexing**: Chained *assignment* with a column label (``df['a'][0] = v``, ``df[mask]['a'] = v``); chained reads and nested lists (``grid[i][j] = v``) are not reported.
+3. **Chain Indexing**: Chained indexing, read or write, on a pandas object (``df['a'][0]``, ``df[mask]['a'] = v``); use ``.loc``/``.iloc``. The receiver must look like a DataFrame/Series (annotated, built by a pandas call or derived from one, or a conventional name such as ``df``); nested dicts/lists (``cfg['a']['b']``, ``grid[i][j]``) and arrays converted out of pandas (``X = df.values``) are not reported.
 4. **Datatype Checker**: ``pd.read_csv`` without ``dtype=`` in a module that groups, merges or sorts the data.
 5. **Column Selection Checker**: A ``pd.read_*`` call without ``usecols=``/``columns=`` whose columns are never narrowed down (``df[['a', 'b']]``) afterwards.
 6. **Merge Parameter Checker**: ``pd.merge(a, b)`` or ``a.merge(b)`` without ``how``/``on``/``validate`` (or ``left_on``/``right_on``/``*_index``).

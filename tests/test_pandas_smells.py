@@ -90,20 +90,43 @@ class TestChainIndexing:
         smells = detect(tmp_py, code)
         assert "Chain Indexing" not in names(smells)
 
-    def test_chained_reads_are_not_reported(self, tmp_py):
-        # Regression for #9: nested dict/list reads were reported because their parent is an Assign.
+    def test_only_pandas_receivers_are_reported(self, tmp_py):
+        # Regression for #9: nested dict/list access is not chain indexing; pandas reads and writes are.
         code = """\
             import pandas as pd
             config = {"model": {"depth": 3}}
             depth = config["model"]["depth"]
             matrix = [[1, 2], [3, 4]]
             cell = matrix[0][1]
+            tags = dict(checks={})
+            tags["checks"]["nan"] = "ok"
             df = pd.DataFrame({"a": [1, 2]})
             df["a"][0] = 5
+            first = df["a"][0]
+            sub = df.copy()
+            last = sub["a"][1]
+            def f(frame: pd.DataFrame, rows):
+                return frame["a"][0], rows["x"]["y"]
         """
         smells = detect(tmp_py, code)
-        lines = [s["line_number"] for s in smells if s["name"] == "Chain Indexing"]
-        assert lines == [7]
+        lines = sorted(s["line_number"] for s in smells if s["name"] == "Chain Indexing")
+        assert lines == [9, 10, 12, 14]
+
+
+class TestChainIndexingNumpyConversions:
+    def test_arrays_converted_from_frames_are_not_pandas(self, tmp_py):
+        code = """\
+            import pandas as pd
+            df = pd.read_csv('wdbc.csv')
+            X = df.loc[:, 2:].values
+            y = df.loc[:, 1].to_numpy()
+            rows = df.to_dict('records')
+            subset = X[y == 1][:40]
+            label = rows[0]['label']
+            col = df[df['a'] > 0]['b']
+        """
+        smells = detect(tmp_py, code)
+        assert [s["line_number"] for s in smells if s["name"] == "Chain Indexing"] == [8]
 
 
 # ---------------------------------------------------------------------------
