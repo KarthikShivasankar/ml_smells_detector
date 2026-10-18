@@ -239,7 +239,7 @@ Report document (`schema_version` is bumped on incompatible changes):
 
 ```json
 {
-  "tool": "ml-code-smell-detector", "version": "0.1.2", "schema_version": 1,
+  "tool": "ml-code-smell-detector", "version": "0.2.0", "schema_version": 1,
   "files": [{
     "file": "src/train.py",
     "findings": [{
@@ -613,67 +613,68 @@ the public API or add a detector, update `features.rst` and the relevant
 
 GitHub Actions workflows live in `.github/workflows/`:
 
-- **`ci.yml`** — runs on every push and pull request to `main`:
-  - **Lint**: `ruff check` + `flake8`
-  - **Test**: full suite (unit, corpus, CLI end-to-end) across Python 3.10, 3.11, 3.12, 3.13 and 3.14
+- **`ci.yml`** — runs on every push and pull request to `main` (and as the release gate, via `workflow_call`):
+  - **Lint**: `uv lock --check` (lockfile in sync with `pyproject.toml`), `ruff check`, `flake8`
+  - **Test**: full suite (unit, corpus, CLI end-to-end) across Python 3.10–3.14, with coverage
+    (`fail_under = 90` in `pyproject.toml`)
   - **Oldest deps**: the suite on Python 3.10 with the declared minimums (astroid 3.0.0, tqdm 4.60.0)
   - **Docs**: Sphinx build as on Read the Docs, warnings are errors
-  - **Build**: `uv build` + `twine check` to validate the distribution
-- **`publish.yml`** — publishes to PyPI when a GitHub Release is published (see below).
+  - **Build**: `uv build`, `twine check --strict`, then the wheel is installed into a clean virtualenv and run
+    from outside the checkout (CLI, `python -m`, JSON and SARIF over the corpus), so a module or entry point missing
+    from the wheel fails CI. The checked `dist/` is uploaded as an artifact.
+- **`publish.yml`** — the release pipeline (see below).
+- **`.github/dependabot.yml`** — weekly grouped updates for GitHub Actions and `uv.lock`, monthly for
+  `docs/requirements.txt`.
 
-Workflow runs are visible under the repo's **Actions** tab. A red CI run blocks a
-release — fix it before tagging.
+Workflow runs are visible under the repo's **Actions** tab. A red CI run blocks a release.
 
 ---
 
 ## Releasing a New Version
 
-Maintainer checklist for cutting a release (uses [semantic versioning](https://semver.org/)):
+Releases use [semantic versioning](https://semver.org/). Publishing a GitHub Release runs `publish.yml`:
 
-1. **Make sure `main` is green** — CI passing, `uv run ruff check .`,
-   `uv run python -m flake8 ml_code_smell_detector tests`, and
-   `uv run python -m pytest tests/` all clean locally.
-2. **Bump the version** in `pyproject.toml` (`version = "X.Y.Z"`) and
-   `docs/source/conf.py` (`release = "X.Y.Z"`). Keep them in sync.
-3. **Update the changelog** — add an `X.Y.Z` entry at the top of
-   `docs/source/changelog.rst` describing user-facing changes.
-4. **Commit and push** to `main`:
+1. **verify** — the tag (`vX.Y.Z`) must equal `version` in `pyproject.toml`, and `docs/source/changelog.rst` must
+   have an `X.Y.Z (...)` section;
+2. **ci** — the whole CI workflow above runs on the tag;
+3. **pypi** — the exact distributions CI built and smoke-tested are uploaded to PyPI with Trusted Publishing
+   (PyPI attestations are generated automatically);
+4. **github-release** — the same files are attached to the GitHub Release.
+
+Checklist:
+
+1. Make sure `main` is green.
+2. Bump `version` in `pyproject.toml` (the docs read it from there) and rename the changelog's **Unreleased**
+   section to `X.Y.Z (YYYY-MM-DD)`. `tests/test_release.py` checks these agree.
+3. Commit and push to `main`, and wait for CI.
+4. Create the release from the changelog section:
    ```bash
-   git commit -am "release: X.Y.Z"
-   git push origin main
+   VERSION=X.Y.Z
+   awk -v v="$VERSION" '$0 ~ "^"v" \\(" {f=1; getline; next} f && /^[0-9]+\.[0-9]+\.[0-9]+ \(/ {exit} f' \
+       docs/source/changelog.rst > /tmp/notes.rst
+   gh release create "v$VERSION" --target main --title "v$VERSION" --notes-file /tmp/notes.rst
    ```
-5. **Tag and create a GitHub Release** for `vX.Y.Z`. This triggers `publish.yml`,
-   which builds, runs `twine check`, and publishes to PyPI via Trusted Publishing.
+5. Watch **Actions → Publish to PyPI**, then verify the release installs:
    ```bash
-   git tag vX.Y.Z
-   git push origin vX.Y.Z
-   # then publish the Release from the tag in the GitHub UI
+   uvx --from "ml-code-smell-detector==$VERSION" ml_smell_detector --version
    ```
-6. **Verify** the new version appears at
-   <https://pypi.org/project/ml-code-smell-detector/> and installs cleanly:
-   ```bash
-   uv pip install --no-cache ml-code-smell-detector==X.Y.Z
-   ```
+
+If publishing fails after the release exists (for example a missing Trusted Publisher), fix the cause and re-run
+**Actions → Publish to PyPI → Run workflow** on the tag; uploads use `skip-existing`, so re-runs are safe.
 
 > If a release is broken (e.g. fails to import on a supported Python version),
 > **yank** it on PyPI (Manage → Release → Yank) and ship a fixed patch release.
 > Yanking hides it from new installs without deleting it.
 
-See [Publishing to PyPI](#publishing-to-pypi) below for the underlying publish
-mechanics (Trusted Publishing and the manual token fallback).
-
 ---
 
 ## Publishing to PyPI
 
-### Recommended: Trusted Publishing (OIDC, no token)
+### Trusted Publishing (OIDC, no token)
 
-This repo ships a `publish.yml` workflow that uploads to PyPI using
-[Trusted Publishing](https://docs.pypi.org/trusted-publishers/) — no API token is
-stored or pasted anywhere.
-
-**One-time setup** on the PyPI project page
-(**Settings → Publishing → Add a trusted publisher**):
+`publish.yml` uploads to PyPI using [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) — no API
+token is stored or pasted anywhere. It requires a **one-time setup** on the PyPI project page
+(**Your projects → ml-code-smell-detector → Settings → Publishing → Add a new publisher → GitHub**):
 
 | Field | Value |
 |---|---|
@@ -682,12 +683,7 @@ stored or pasted anywhere.
 | Workflow name | `publish.yml` |
 | Environment | `pypi` |
 
-**To release a new version:**
-
-1. Bump `version` in `pyproject.toml` and update `docs/source/changelog.rst`.
-2. Commit and push to `main`.
-3. Create a GitHub Release (e.g. tag `v0.1.2`). The `publish.yml` workflow builds,
-   runs `twine check`, and publishes automatically.
+Without it the upload fails with `invalid-publisher` (valid token, but no corresponding publisher).
 
 ### Manual publish (fallback)
 

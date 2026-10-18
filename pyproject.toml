@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ml-code-smell-detector"
-version = "0.1.2"
+version = "0.2.0"
 description = "A package to detect code smells in machine learning code"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -61,6 +61,9 @@ packages = ["ml_code_smell_detector"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.report]
+fail_under = 90  # CI runs the suite with --cov; measured 92% at 0.2.0
 
 [tool.ruff]
 line-length = 150

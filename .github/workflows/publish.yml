@@ -1,51 +1,59 @@
 name: Publish to PyPI
 
-# Publishes to PyPI via Trusted Publishing (OIDC) — no API token required.
+# Release pipeline: version gate -> the full CI (lint, test matrix, oldest deps, docs, build + wheel smoke test)
+# -> publish the exact smoke-tested files to PyPI with Trusted Publishing (OIDC, no token; PyPI attestations are
+# generated automatically) -> attach them to the GitHub Release.
 #
 # One-time setup on PyPI (https://pypi.org/manage/project/ml-code-smell-detector/settings/publishing/):
-#   - Add a "Trusted Publisher" with:
-#       Owner:           KarthikShivasankar
-#       Repository:      ml_smells_detector
-#       Workflow name:   publish.yml
-#       Environment:     pypi
+#   add a Trusted Publisher: Owner KarthikShivasankar, Repository ml_smells_detector,
+#   Workflow publish.yml, Environment pypi.
 #
-# To release: bump `version` in pyproject.toml, then publish a GitHub Release
-# (or push a tag like v0.1.2 and create the release).
+# To release: bump `version` in pyproject.toml, add the matching section to docs/source/changelog.rst, merge to
+# main, then `gh release create vX.Y.Z` (see "Releasing a New Version" in the README). If publishing fails after
+# the release exists (e.g. the Trusted Publisher was missing), fix the cause and re-run this workflow for the tag
+# (Actions -> Publish to PyPI -> Run workflow -> pick the tag); uploads are idempotent (skip-existing).
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  build:
-    name: Build distributions
+  verify:
+    name: Tag matches version and changelog
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.0
-        with:
-          python-version: "3.12"
+      - name: Check tag, pyproject version and changelog agree
+        run: |
+          version=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
+          if [ "$GITHUB_REF_TYPE" != "tag" ]; then
+            echo "::error::Publishing must run on a tag (got $GITHUB_REF_TYPE $GITHUB_REF_NAME)"; exit 1
+          fi
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version in pyproject.toml"; exit 1
+          fi
+          if ! grep -q "^$version (" docs/source/changelog.rst; then
+            echo "::error::docs/source/changelog.rst has no '$version (...)' section"; exit 1
+          fi
+          echo "Releasing $version"
 
-      - name: Build sdist and wheel
-        run: uv build
+  ci:
+    name: CI
+    needs: verify
+    uses: ./.github/workflows/ci.yml
 
-      - name: Check distributions
-        run: uvx twine check dist/*
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: dist
-          path: dist/
-
-  publish:
+  pypi:
     name: Publish to PyPI
-    needs: build
+    needs: ci
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -53,7 +61,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: Download build artifacts
+      - name: Download the smoke-tested distributions
         uses: actions/download-artifact@v8
         with:
           name: dist
@@ -63,3 +71,21 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
+
+  github-release:
+    name: Attach distributions to the GitHub Release
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the published distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"

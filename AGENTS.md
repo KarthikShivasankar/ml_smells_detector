@@ -114,11 +114,19 @@ read-only (parses and node strings are cached).
 
 ## CI / Release
 
-- `.github/workflows/ci.yml` runs lint, a Python 3.10–3.14 test matrix, a job against the oldest supported
-  dependencies (Python 3.10, astroid 3.0.0, tqdm 4.60.0), a docs build with warnings as errors (as on Read the
-  Docs), and a build + twine check on every push/PR to `main`.
-- `.github/workflows/publish.yml` publishes to PyPI via Trusted Publishing (OIDC) when a GitHub Release is
-  published — no API token required.
-- `astral-sh/setup-uv` publishes no moving major tag: pin a full release (e.g. `@v10.3.0`).
-- To release: bump `version` in `pyproject.toml` (and `release` in `docs/source/conf.py`), move the changelog's
-  "Unreleased" section under the new version in `docs/source/changelog.rst`, then publish a GitHub Release.
+- `.github/workflows/ci.yml` runs on every push/PR to `main` and as the release gate (`workflow_call`): lint
+  (`uv lock --check`, ruff, flake8), a Python 3.10–3.14 test matrix with coverage (`fail_under = 90`), a job on the
+  oldest supported dependencies (Python 3.10, astroid 3.0.0, tqdm 4.60.0), a docs build with warnings as errors
+  (as on Read the Docs), and build + `twine check --strict` + a smoke test of the wheel installed in a clean venv and
+  run outside the checkout. It uploads `dist/` as an artifact.
+- `.github/workflows/publish.yml` runs when a GitHub Release is published (or manually on a tag): verify the tag
+  equals the `pyproject.toml` version and the changelog has that section → run `ci.yml` → upload the exact
+  smoke-tested artifact to PyPI via Trusted Publishing (OIDC; needs the one-time Trusted Publisher on PyPI, else
+  `invalid-publisher`) → attach the files to the GitHub Release. Re-runnable on a tag (`skip-existing`).
+- `astral-sh/setup-uv` publishes no moving major tag: pin a full release (e.g. `@v10.3.0`). Dependabot
+  (`.github/dependabot.yml`) proposes action and `uv.lock` updates weekly.
+- To release: bump `version` in `pyproject.toml` only (the docs read it), rename the changelog's "Unreleased"
+  section to `X.Y.Z (YYYY-MM-DD)` (`tests/test_release.py` checks both, and the installed version), push to `main`,
+  wait for green CI, then `gh release create vX.Y.Z --target main --notes-file <changelog section>` (the README has
+  the exact command). Check the Publish run's logs and that `uvx --from ml-code-smell-detector==X.Y.Z
+  ml_smell_detector --version` works.

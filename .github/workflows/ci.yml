@@ -5,13 +5,15 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # publish.yml runs this whole workflow as its release gate, and publishes the dist artifact it builds
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
@@ -23,10 +25,13 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v10.3.0
         with:
-          python-version: "3.12"
+          python-version: "3.13"
+
+      - name: Lockfile is in sync with pyproject.toml
+        run: uv lock --check
 
       - name: Install project (with dev extras)
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Ruff lint
         run: uv run ruff check .
@@ -50,10 +55,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install project (with dev extras)
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
-      - name: Run tests
-        run: uv run python -m pytest tests/ -v -rs
+      - name: Run tests (coverage floor in pyproject.toml)
+        run: uv run python -m pytest tests/ -v -rs --cov=ml_code_smell_detector --cov-report=term-missing
 
   min-deps:
     name: Test oldest supported dependencies (Python 3.10, astroid 3.0)
@@ -94,7 +99,7 @@ jobs:
         run: .venv/bin/sphinx-build -W --keep-going -b html docs/source docs/build/html
 
   build:
-    name: Build & check distribution
+    name: Build, check and smoke-test the distribution
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -102,10 +107,37 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v10.3.0
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Build sdist and wheel
         run: uv build
 
       - name: Validate distribution metadata
-        run: uvx twine check dist/*
+        run: uvx twine check --strict dist/*
+
+      # Install the wheel into a fresh venv and run it from outside the source tree, so the packaged files
+      # (not the checkout) are what gets imported: catches modules or entry points missing from the wheel.
+      - name: Smoke-test the installed wheel
+        run: |
+          uv venv "$RUNNER_TEMP/smoke"
+          uv pip install --python "$RUNNER_TEMP/smoke" dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/smoke/bin/ml_smell_detector" --version
+          "$RUNNER_TEMP/smoke/bin/python" -m ml_code_smell_detector analyze "$GITHUB_WORKSPACE/tests/corpus" --format json > report.json
+          "$RUNNER_TEMP/smoke/bin/python" -m ml_code_smell_detector analyze "$GITHUB_WORKSPACE/tests/corpus" --format sarif > report.sarif
+          "$RUNNER_TEMP/smoke/bin/python" - <<'EOF'
+          import json
+          import ml_code_smell_detector
+          assert "site-packages" in ml_code_smell_detector.__file__, ml_code_smell_detector.__file__
+          summary = json.load(open("report.json"))["summary"]
+          assert summary["errors"] == 0 and summary["findings"] > 0, summary
+          assert json.load(open("report.sarif"))["runs"][0]["results"]
+          print("wheel OK:", ml_code_smell_detector.__version__, summary["findings"], "findings")
+          EOF
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7

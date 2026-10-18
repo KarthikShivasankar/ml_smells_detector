@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Unreleased
-----------
+0.2.0 (2026-10-18)
+------------------
 
 Agent and harness support
 
@@ -32,8 +32,17 @@ Dependencies, CI and docs
   ``tqdm>=4.60``. Locked to astroid 4.3.4, tqdm 4.70.1, pytest 9.1, ruff 0.17, flake8 7.4 (pyflakes 4); Python 3.14
   is supported and tested.
 - CI: actions/checkout v7, astral-sh/setup-uv v10.3.0 (caching via its secure ``auto`` default),
-  upload-artifact v7 / download-artifact v8, a Python 3.14 job, a job on the oldest supported dependencies, and a
-  docs build with warnings as errors.
+  upload-artifact v7 / download-artifact v8, a Python 3.14 job, a job on the oldest supported dependencies, a
+  docs build with warnings as errors, ``uv lock --check``, a 90% coverage floor, and a smoke test that installs
+  the built wheel into a clean virtualenv and runs the CLI from outside the checkout. Dependabot keeps actions and
+  ``uv.lock`` current.
+- CD: publishing a GitHub Release now checks that the tag, ``pyproject.toml`` version and changelog agree, runs
+  the whole CI on the tag, uploads exactly the smoke-tested files to PyPI with Trusted Publishing (with PyPI
+  attestations) and attaches them to the GitHub Release. It can be re-run for an existing tag
+  (``workflow_dispatch``). The 0.1.2 publish run had failed with ``invalid-publisher`` (no Trusted Publisher on
+  PyPI) and that release was uploaded by hand.
+- The documentation version is read from ``pyproject.toml``; ``tests/test_release.py`` checks the version,
+  changelog and installed package agree.
 - Read the Docs builds on Ubuntu 24.04 / Python 3.13 with current Sphinx and installs the package, so the API pages
   are no longer empty there.
 
