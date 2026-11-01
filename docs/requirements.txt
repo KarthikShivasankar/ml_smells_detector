@@ -1,5 +1,5 @@
 # Read the Docs builds on Python 3.13 (see .readthedocs.yaml); the package itself is installed there too.
 sphinx>=9.1
 sphinx-rtd-theme>=3.1
-sphinx-autodoc-typehints>=3.17
+sphinx-autodoc-typehints>=3.17.4
 myst-parser>=5.1
